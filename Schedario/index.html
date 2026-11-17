@@ -86,6 +86,7 @@ button:disabled{opacity:.45;cursor:default}
       <li>Tocca quattro schede che secondo te stanno insieme, poi premi <b>Riponi nel cassetto</b>.</li>
       <li>Se il gruppo è giusto, il cassetto si apre e svela la sua etichetta.</li>
       <li>Hai a disposizione <b>4 errori</b>, uno per ogni lume. Quando si spegne l'ultimo, lo schedario si chiude.</li>
+      <li>Puoi ricominciare da capo quando vuoi: sulla pergamena comparirà il numero della partita.</li>
       <li>Alla fine comparirà una pergamena con il tuo nome e un codice personale: mandane lo screen in privato a Voce del Magistero.</li>
     </ul>
   </div>
@@ -111,6 +112,7 @@ button:disabled{opacity:.45;cursor:default}
     </div>
     <div class="msg" id="msg" role="status"></div>
     <div id="fine" class="nascosto"></div>
+    <div class="comandi"><button id="ricomincia">Ricomincia da capo</button></div>
   </section>
 </div>
 
@@ -124,8 +126,8 @@ function dec(key,b64){const b=Uint8Array.from(atob(b64),c=>c.charCodeAt(0)),k=st
 function chiave(ws){return [...ws].sort().join("|");}
 function trova(ws){const h=hx(chiave(ws));return D.data.findIndex(g=>g.h===h);}
 function norm(n){return n.trim().replace(/\s+/g," ").toLowerCase();}
-function codice(nome,trovati,errori){
-  const s="cod|"+norm(nome)+"|"+trovati+"|"+errori;
+function codice(nome,trovati,errori,tent){
+  const s="cod|"+norm(nome)+"|"+trovati+"|"+errori+"|"+tent;
   const A="ACDEFGHJKLMNPQRSTUVWXYZ2345679";
   let a=fnv(s,11),b=fnv(s,23),out="";
   for(let i=0;i<4;i++){out+=A[a%A.length];a=Math.floor(a/A.length);}
@@ -144,7 +146,8 @@ const $=id=>document.getElementById(id);
 function avvia(){
   $("ingresso").classList.add("nascosto");
   $("gioco").classList.remove("nascosto");
-  $("chi").textContent="Studente: "+S.nome;
+  $("chi").textContent="Studente: "+S.nome+(S.tentativo>1?" · partita n. "+S.tentativo:"");
+  $("comandi").classList.remove("nascosto");$("fine").classList.add("nascosto");
   disegna();
 }
 function disegna(){
@@ -200,9 +203,9 @@ function fine(){
   $("comandi").classList.add("nascosto");
   const f=$("fine");f.classList.remove("nascosto");
   const t=S.aperti.length,tot=D.data.length,vinto=t===tot;
-  const cod=codice(S.nome,t,S.errori);
+  const cod=codice(S.nome,t,S.errori,S.tentativo);
   f.innerHTML='<div class="pergamena"><h2></h2><p class="testo"></p><p><b class="nome"></b></p>'+
-    '<p>Cassetti riordinati: <b>'+t+' su '+tot+'</b> · Errori: <b>'+S.errori+'</b></p>'+
+    '<p>Cassetti riordinati: <b>'+t+' su '+tot+'</b> · Errori: <b>'+S.errori+'</b> · Partita n. <b>'+S.tentativo+'</b></p>'+
     '<div class="codice"></div><p class="piccolo">Manda lo screen di questa pergamena in privato a Voce del Magistero, poi scrivi «fatto» sotto il post.</p></div>';
   f.querySelector("h2").textContent=vinto?"Lo schedario è in ordine!":"Lo schedario si è chiuso";
   f.querySelector(".testo").textContent=vinto
@@ -216,15 +219,20 @@ $("entra").onclick=()=>{
   if(n.length<3){$("avvisoNome").textContent="Scrivi il tuo nome per intero.";return;}
   if(!confirm("Confermi il nome «"+n+"»? Non potrai più cambiarlo."))return;
   const r=rnd(fnv(norm(n),5));
-  S={nome:n,ordine:mescola([...D.words],r),aperti:[],errori:0,provati:[],finito:false};
+  S={nome:n,ordine:mescola([...D.words],r),aperti:[],errori:0,provati:[],finito:false,tentativo:1};
   salva();avvia();
 };
 $("nome").addEventListener("keydown",e=>{if(e.key==="Enter")$("entra").click();});
 $("mescola").onclick=()=>{mescola(S.ordine,Math.random);salva();disegna();};
 $("deseleziona").onclick=()=>{sel=[];$("msg").textContent="";disegna();};
 $("riponi").onclick=riponi;
+$("ricomincia").onclick=()=>{
+  if(!confirm("Vuoi davvero ricominciare? I cassetti aperti si richiuderanno e i lumi si riaccenderanno. Sulla pergamena comparirà il numero della partita."))return;
+  S={nome:S.nome,ordine:mescola([...D.words],Math.random),aperti:[],errori:0,provati:[],finito:false,tentativo:(S.tentativo||1)+1};
+  sel=[];$("msg").textContent="";salva();avvia();window.scrollTo(0,0);
+};
 S=carica();
-if(S&&S.nome&&Array.isArray(S.ordine))avvia();
+if(S&&S.nome&&Array.isArray(S.ordine)){if(!S.tentativo)S.tentativo=1;avvia();}
 </script>
 </body>
 </html>
