@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Stanza del Gatto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .serpe-wrap{max-width:420px; margin:16px auto 8px}
+  .serpe{display:grid; grid-template-columns:repeat(7,1fr) 34px; gap:3px; user-select:none; touch-action:manipulation}
+  .serpe button{aspect-ratio:1; padding:0 !important; border:1px solid var(--ardesia-3) !important; border-radius:4px; background:#2A3157; display:flex; align-items:center; justify-content:center;
+    font:700 clamp(15px,4.4vw,20px) "Spectral",serif; color:#FFFFFF; text-align:center}
+  .serpe button.corpo{background:#4FE3B2; border-color:#FFFFFF !important; color:#11152B}
+  .serpe button.vuota{background:#20264A; color:#9AA3CF}
+  .serpe button.capo{background:#FFB547; border-color:#FFFFFF !important; color:#11152B; cursor:default}
+  .serpe .num{display:flex; align-items:center; justify-content:center; font:700 18px "Spectral",serif; color:var(--brina); border-radius:4px}
+  .serpe .num.giusto{color:#11152B; background:#4FE3B2}
+  .serpe .num.troppo{color:#11152B; background:#FF8A7A}
+  .legenda-s{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; font-size:14.5px; color:var(--ferro); margin-top:8px}
+  .legenda-s i{display:inline-block; width:14px; height:14px; vertical-align:-2px; margin-right:5px; border-radius:3px}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Austri · la quarta sala</p>
+    <h1>La Stanza del Gatto</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Al centro della stanza dorme un gatto grigio, enorme, acciambellato su un pavimento di pietre quadrate. «Una sfida da bambini», dice il re. «I nostri piccoli lo sollevano tutti i giorni. Prova anche tu.»</p>
+    <p>Ti avvicini e qualcosa non torna. Sotto il pelo, quando il gatto respira, si muove qualcosa di lungo e freddo. E la sua ombra sulle pietre non ha la forma di un gatto: è una linea che si avvolge su se stessa. Lungo i muri, qualcuno ha inciso dei numeri, uno per ogni fila di pietre.</p>
+  </div>
+  <div class="avviso">Su una pietra vicino alla porta, graffiato in fretta: «Non prenderlo per la pancia. Prima trova dove finisce la bestia, poi solleva una zampa sola.»</div>
+
+  <section class="gioco" id="g-gatto">
+    <h2>Il gatto grigio</h2>
+    <p class="regole">Sotto il gatto si nasconde un serpente. Va dalla testa (la pietra arancione con ᛟ) alla coda (la pietra arancione con ᛉ), passando da una pietra all'altra solo in orizzontale o in verticale, senza mai biforcarsi. Il serpente non tocca mai se stesso, nemmeno di spigolo: due sue parti non consecutive non possono stare vicine, neppure in diagonale. I numeri a destra e in basso dicono quante pietre del serpente ci sono in quella riga o colonna.</p>
+    <p class="regole"><strong>Come si gioca:</strong> tocca una pietra una volta per segnarla come serpente (verde), due volte per segnarla come vuota (✕), tre volte per cancellare. Un numero diventa verde quando la sua fila è giusta, rosso se hai segnato troppe pietre.</p>
+    <div class="serpe-wrap"><div class="serpe" id="serpe"></div></div>
+    <div class="legenda-s"><span><i style="background:#4FE3B2"></i>serpente</span><span><i style="background:#20264A;border:1px solid #9AA3CF"></i>vuota ✕</span><span><i style="background:#FFB547"></i>testa e coda</span></div>
+    <p class="nota" id="statoG" style="text-align:center">Pietre del serpente segnate: 0 su 21</p>
+    <div class="scelte" style="margin:8px 0 0"><button id="daCapoG" class="piccolo">Cancella tutti i segni</button></div>
+  </section>
+
+  <div class="scelte" id="trappola"></div>
+  <div class="scelte indietro"><button id="torna">Torna nel cortile</button></div>
+</main>
+<script>
+  const N = 7, RIGHE = [2,3,3,5,3,2,3], COLONNE = [5,3,4,2,1,2,4], TESTA = [2,1], CODA = [5,0];
+  const TOTALE = RIGHE.reduce((a, b) => a + b, 0);
+  const fisso = (x, y) => (x === TESTA[0] && y === TESTA[1]) || (x === CODA[0] && y === CODA[1]);
+  let stato = {}; // "x,y" -> 1 serpente, 2 vuota
+  const box = document.getElementById('serpe');
+  const corpo = (x, y) => fisso(x, y) || stato[x + ',' + y] === 1;
+  function costruisci() {
+    box.innerHTML = '';
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const b = document.createElement('button'); b.dataset.c = x + ',' + y;
+        b.setAttribute('aria-label', `riga ${y + 1}, colonna ${x + 1}`);
+        b.onclick = () => tocca(x, y); box.appendChild(b);
+      }
+      const n = document.createElement('span'); n.className = 'num'; n.dataset.r = y; n.textContent = RIGHE[y]; box.appendChild(n);
+    }
+    for (let x = 0; x < N; x++) { const n = document.createElement('span'); n.className = 'num'; n.dataset.k = x; n.textContent = COLONNE[x]; box.appendChild(n); }
+    box.appendChild(document.createElement('span'));
+  }
+  function valido() {
+    const celle = [];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (corpo(x, y)) celle.push([x, y]);
+    for (let y = 0; y < N; y++) if (celle.filter(c => c[1] === y).length !== RIGHE[y]) return false;
+    for (let x = 0; x < N; x++) if (celle.filter(c => c[0] === x).length !== COLONNE[x]) return false;
+    const vicini = (x, y) => [[1,0],[-1,0],[0,1],[0,-1]].filter(([dx, dy]) => x + dx >= 0 && y + dy >= 0 && x + dx < N && y + dy < N && corpo(x + dx, y + dy)).length;
+    for (const [x, y] of celle) {
+      if (vicini(x, y) !== (fisso(x, y) ? 1 : 2)) return false;
+      for (const [dx, dy] of [[1,1],[1,-1]]) {
+        const a = x + dx, b = y + dy;
+        if (a >= 0 && b >= 0 && a < N && b < N && corpo(a, b) && !corpo(a, y) && !corpo(x, b)) return false;
+      }
+    }
+    // un solo pezzo, dalla testa
+    const viste = new Set([TESTA.join(',')]), pila = [TESTA];
+    while (pila.length) {
+      const [x, y] = pila.pop();
+      for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const k = (x + dx) + ',' + (y + dy);
+        if (x + dx >= 0 && y + dy >= 0 && x + dx < N && y + dy < N && corpo(x + dx, y + dy) && !viste.has(k)) { viste.add(k); pila.push([x + dx, y + dy]); }
+      }
+    }
+    return viste.size === celle.length;
+  }
+  function disegna() {
+    let segnate = 0;
+    box.querySelectorAll('button').forEach(b => {
+      const [x, y] = b.dataset.c.split(',').map(Number), s = stato[b.dataset.c];
+      b.className = ''; b.textContent = '';
+      if (fisso(x, y)) { b.className = 'capo'; b.textContent = x === TESTA[0] && y === TESTA[1] ? 'ᛟ' : 'ᛉ'; segnate++; }
+      else if (s === 1) { b.className = 'corpo'; segnate++; }
+      else if (s === 2) { b.className = 'vuota'; b.textContent = '✕'; }
+    });
+    for (let y = 0; y < N; y++) {
+      let c = 0; for (let x = 0; x < N; x++) if (corpo(x, y)) c++;
+      box.querySelector(`[data-r="${y}"]`).className = 'num' + (c === RIGHE[y] ? ' giusto' : c > RIGHE[y] ? ' troppo' : '');
+    }
+    for (let x = 0; x < N; x++) {
+      let c = 0; for (let y = 0; y < N; y++) if (corpo(x, y)) c++;
+      box.querySelector(`[data-k="${x}"]`).className = 'num' + (c === COLONNE[x] ? ' giusto' : c > COLONNE[x] ? ' troppo' : '');
+    }
+    document.getElementById('statoG').textContent = `Pietre del serpente segnate: ${segnate} su ${TOTALE}` + (segnate === TOTALE && !valido() ? ' — ma il serpente non è ancora giusto.' : '');
+    return valido();
+  }
+  function tocca(x, y) {
+    if (fisso(x, y) || Y.risolto('gatto')) return;
+    const k = x + ',' + y; stato[k] = ((stato[k] || 0) + 1) % 3; if (!stato[k]) delete stato[k];
+    Y.suono('clic'); Y.S.scrivi('e_gatto_stato', JSON.stringify(stato));
+    if (disegna()) vinto();
+  }
+  function vinto() {
+    Y.sigilla('gatto', document.getElementById('g-gatto'), 'Hai trovato dove finisce la bestia.');
+    document.getElementById('trappola').innerHTML = '';
+    if (!Y.fatto('gatto_rivelato')) {
+      Y.segna('gatto_rivelato');
+      Y.popup('Una zampa sola', '<p>Ora sai dove afferrarlo. Infili le mani sotto il gatto, proprio dove finisce la coda del serpente, e spingi verso l\'alto con tutta la forza che hai. Il gatto inarca la schiena fino al soffitto, e una zampa, una sola, si stacca da terra. Nella sala scende un silenzio strano. I giganti non ridono più.</p>');
+    }
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('fiume') })) {
+    try { stato = JSON.parse(Y.S.leggi('e_gatto_stato') || '{}') || {}; } catch (e) { stato = {}; }
+    costruisci();
+    if (disegna() || Y.risolto('gatto')) Y.sigilla('gatto', document.getElementById('g-gatto'));
+    if (!Y.risolto('gatto')) {
+      const b = document.createElement('button'); b.className = 'pericolo'; b.textContent = 'Afferra il gatto per la pancia e tira su con tutte le forze';
+      b.onclick = () => Y.trappola('gatto', 'Il peso del mondo',
+        '<p>Infili le braccia sotto la pancia del gatto e tiri. Il gatto non si muove. Tiri ancora, e senti sotto le dita qualcosa che non è pelo: sono squame, fredde, e si stringono. Il gatto apre un occhio giallo, poi la cosa sotto il pelo si avvolge intorno a te una volta, due volte, con la calma di chi ha tutto il tempo del mondo.</p>');
+      document.getElementById('trappola').appendChild(b);
+    }
+    document.getElementById('daCapoG').onclick = () => { if (Y.risolto('gatto')) return; stato = {}; Y.S.scrivi('e_gatto_stato', '{}'); disegna(); };
+    document.getElementById('torna').onclick = () => Y.vai('E_Corte.html');
+  }
+</script>
+</body>
+</html>

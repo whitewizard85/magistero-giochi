@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Il Passo del Vento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · in salita</p>
+    <h1>Il Passo del Vento</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Il sentiero sale tra due pareti di roccia nera e la nebbia resta indietro, giù nella distesa. Qui c'è il vento, invece: un vento che non viene da nessuna direzione e che entra nei vestiti come acqua.</p>
+    <p>Sul fianco destro, un vecchio sentiero scendeva verso le betulle e il fumo di una capanna: ora è una colata di sassi e fango, impossibile da percorrere in discesa.</p>
+    <p>Oltre il passo, nella parete della montagna, si apre la bocca di una grotta. Dal buio esce un rumore regolare, lento. Qualcosa di molto grande sta respirando.</p>
+  </div>
+  <div class="avviso">Su un cumulo di pietre, a metà salita: «Chi è salito con la lana dei mercanti è rimasto qui. Le pietre sono loro.»</div>
+  <div class="scelte" id="scelte"></div>
+  <div class="scelte indietro"><button id="torna">Scendi verso la distesa</button></div>
+</main>
+<script>
+  if (Y.stanza({ richiede: () => Y.fatto('cancello') })) {
+    const box = document.getElementById('scelte');
+    if (Y.fatto('passo')) {
+      const b = document.createElement('button'); b.textContent = 'Riattraversa il passo verso la grotta';
+      b.onclick = () => Y.vai('N_Grotta.html'); box.appendChild(b);
+    } else {
+      if (Y.ha('mantello')) {
+        const m = document.createElement('button'); m.className = 'oggetto';
+        m.textContent = 'Avvolgiti nel mantello di vaðmál e attraversa il passo';
+        m.onclick = async () => {
+          Y.segna('passo'); Y.suono('premio');
+          await Y.popup('', '<p>Il vento ci prova. Cerca le cuciture, i polsi, il collo, e non trova niente: la lana della völva è tessuta troppo fitta. Arrivi dall\'altra parte con le guance rosse e le mani calde.</p>');
+          Y.vai('N_Grotta.html');
+        };
+        box.appendChild(m);
+      }
+      const a = document.createElement('button'); a.className = 'pericolo';
+      a.textContent = 'Stringiti nei vestiti che hai addosso e sali di corsa';
+      a.onclick = () => Y.trappola('gelo', 'Il vento senza direzione',
+        '<p>Corri per cento passi, e il freddo ti segue senza fatica. Ai duecento non senti più i piedi. Ai trecento ti siedi un momento su una pietra, solo un momento, e la neve comincia a coprirti con molta delicatezza.</p>');
+      box.appendChild(a);
+    }
+    document.getElementById('torna').onclick = () => Y.vai('N_Distesa.html');
+  }
+</script>
+</body>
+</html>

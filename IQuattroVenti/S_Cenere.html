@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Piana di Cenere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .modo{display:flex; gap:8px; justify-content:center; margin:14px 0 6px}
+  .modo button{font-size:15.5px; padding:8px 14px; border-left-width:1px}
+  .modo button.attivo{background:#FFC24D; color:#221714; border-color:#FFFFFF; font-weight:700}
+  .campo{display:grid; grid-template-columns:repeat(8,1fr); gap:3px; max-width:400px; margin:10px auto 8px; user-select:none; touch-action:manipulation}
+  .campo button{aspect-ratio:1; padding:0 !important; border-radius:4px; border:1px solid #8C6A5C !important; background:#6E5A52; text-align:center;
+    font:700 clamp(16px,4.8vw,22px) "Spectral",serif; color:#FFFFFF; box-shadow:inset 0 -3px 0 rgba(0,0,0,.35)}
+  .campo button.aperta{background:#2A1D19; border-color:#4A342C !important; box-shadow:none; cursor:default}
+  .campo button.segnata{background:#6E5A52; color:#FFC24D}
+  .campo button.brace{background:#FF6A2A; color:#FFFFFF}
+  .campo .n1{color:#8FD3FF} .campo .n2{color:#5EE3C0} .campo .n3{color:#FFC24D} .campo .n4{color:#FF9EC0} .campo .n5{color:#FFFFFF}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Suðri · prima stanza</p>
+    <h1>La Piana di Cenere</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>La galleria del Sud scende e scende, e l'aria si fa più calda a ogni passo, finché sbuchi su una piana grigia sotto un cielo color rame. Il terreno è coperto di cenere morbida, e sotto la cenere qualcosa brilla: braci, ancora vive, sparse come trappole. In fondo alla piana sale il fumo di una fucina.</p>
+    <p>Sulla pietra dove sei appena arrivato, qualcuno ha inciso con il carbone un avvertimento e un metodo.</p>
+  </div>
+  <div class="avviso">«Chi corre sulla cenere, cammina sulle braci. Le pietre fredde sanno contare: ognuna dice quante braci ha intorno a sé.»</div>
+
+  <section class="gioco" id="g-cenere">
+    <h2>Il campo di braci</h2>
+    <p class="regole">La piana è divisa in 64 pietre. Sotto 11 di esse c'è una brace. Quando scopri una pietra fredda, compare un numero: è quante braci ci sono nelle 8 pietre intorno (anche in diagonale). Se una pietra non ha braci intorno, si scoprono da sole anche le vicine. Scopri tutte le pietre fredde senza pestare una brace.</p>
+    <p class="regole"><strong>Come si gioca:</strong> con «Scopri» tocchi una pietra per scoprirla; con «Segna» la contrassegni con ▲ come brace, per ricordartelo (il segno non conta per la vittoria). Si può risolvere tutto ragionando, senza mai tirare a indovinare. Se pesti una brace, la piana si ricopre di cenere e si ricomincia.</p>
+    <div class="modo"><button id="mScopri" class="attivo">Scopri</button><button id="mSegna">Segna ▲</button></div>
+    <div class="campo" id="campo"></div>
+    <p class="nota" id="statoB" style="text-align:center">Pietre fredde scoperte: 0 su 53</p>
+  </section>
+
+  <div class="scelte" id="uscite"></div>
+  <div class="scelte indietro"><button id="torna">Torna alle radici del frassino</button></div>
+</main>
+<script>
+  const W = 8, H = 8, INIZIO = [6, 1];
+  const BRACI = new Set([[1,0],[2,1],[2,2],[2,6],[3,2],[3,5],[4,1],[4,5],[4,7],[7,4],[7,5]].map(c => c.join(',')));
+  const SICURE = W * H - BRACI.size;
+  const vicini = (x, y) => { const v = []; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if ((dx || dy) && x + dx >= 0 && y + dy >= 0 && x + dx < W && y + dy < H) v.push([x + dx, y + dy]); return v; };
+  const numero = (x, y) => vicini(x, y).filter(([a, b]) => BRACI.has(a + ',' + b)).length;
+  let aperte = new Set(), segnate = new Set(), modo = 'scopri', bloccato = false;
+  const campo = document.getElementById('campo'), celle = {};
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const b = document.createElement('button'); b.dataset.c = x + ',' + y; b.setAttribute('aria-label', `riga ${y + 1}, colonna ${x + 1}`);
+    b.onclick = () => tocca(x, y); campo.appendChild(b); celle[x + ',' + y] = b;
+  }
+  function apri(x, y) {
+    const pila = [[x, y]];
+    while (pila.length) {
+      const [a, b] = pila.pop(), k = a + ',' + b;
+      if (aperte.has(k)) continue;
+      aperte.add(k); segnate.delete(k);
+      if (numero(a, b) === 0) vicini(a, b).forEach(([c, d]) => { if (!aperte.has(c + ',' + d)) pila.push([c, d]); });
+    }
+  }
+  function disegna() {
+    Object.entries(celle).forEach(([k, b]) => {
+      const [x, y] = k.split(',').map(Number);
+      b.className = ''; b.textContent = '';
+      if (aperte.has(k)) { b.classList.add('aperta'); const n = numero(x, y); if (n) { b.textContent = n; b.classList.add('n' + Math.min(n, 5)); } }
+      else if (segnate.has(k)) { b.classList.add('segnata'); b.textContent = '▲'; }
+    });
+    document.getElementById('statoB').textContent = `Pietre fredde scoperte: ${aperte.size} su ${SICURE}`;
+    return aperte.size === SICURE;
+  }
+  function salva() { Y.S.scrivi('s_cenere_stato', JSON.stringify({ a: [...aperte], s: [...segnate] })); }
+  function nuovaPiana() { aperte = new Set(); segnate = new Set(); apri(...INIZIO); salva(); disegna(); }
+  async function tocca(x, y) {
+    if (bloccato || Y.risolto('cenere')) return;
+    const k = x + ',' + y; if (aperte.has(k)) return;
+    if (modo === 'segna') { if (segnate.has(k)) segnate.delete(k); else segnate.add(k); Y.suono('clic'); salva(); disegna(); return; }
+    if (segnate.has(k)) return; // una pietra segnata va prima liberata
+    if (BRACI.has(k)) {
+      bloccato = true; celle[k].className = 'brace'; celle[k].textContent = '✹'; Y.suono('no');
+      await Y.popup('Una brace!', '<p>La cenere cede sotto lo stivale e sotto c\'è il rosso vivo. Salti indietro con la suola che fuma, fino alla pietra da cui eri partito. Il vento, intanto, ricopre di cenere tutto quello che avevi scoperto.</p>', [{ testo: 'Ricomincia la traversata' }]);
+      bloccato = false; nuovaPiana(); return;
+    }
+    apri(x, y); Y.suono('clic'); salva();
+    if (disegna()) vinto();
+  }
+  function vinto() { Y.sigilla('cenere', document.getElementById('g-cenere'), 'Hai trovato la strada fra le braci.'); uscite(); }
+  function uscite() {
+    const u = document.getElementById('uscite'); u.innerHTML = '';
+    if (Y.risolto('cenere')) {
+      const b = document.createElement('button'); b.textContent = 'Attraversa la piana verso il fumo della fucina';
+      b.onclick = () => { Y.segna('piana'); Y.vai('S_Bottega.html'); }; u.appendChild(b);
+    } else {
+      const b = document.createElement('button'); b.className = 'pericolo'; b.textContent = 'Lascia perdere le pietre: attraversa la piana di corsa';
+      b.onclick = () => Y.trappola('cenere', 'Le braci sotto la cenere',
+        '<p>Dieci passi veloci, e va tutto bene. All\'undicesimo la cenere si apre come una bocca e sotto c\'è il fuoco. Al dodicesimo non hai più suole. Al tredicesimo non hai più fiato, perché la cenere sollevata dalla corsa ti riempie la gola, calda e amara.</p>');
+      u.appendChild(b);
+    }
+  }
+  if (Y.stanza({ richiede: () => true })) {
+    let st = null; try { st = JSON.parse(Y.S.leggi('s_cenere_stato') || 'null'); } catch (e) {}
+    if (st && st.a && st.a.length) { aperte = new Set(st.a); segnate = new Set(st.s || []); disegna(); } else nuovaPiana();
+    if (Y.risolto('cenere')) { BRACI.forEach(k => { if (!aperte.has(k)) segnate.add(k); }); SICURE && [...Array(W * H).keys()].forEach(i => { const k = (i % W) + ',' + Math.floor(i / W); if (!BRACI.has(k)) aperte.add(k); }); disegna(); Y.sigilla('cenere', document.getElementById('g-cenere')); }
+    uscite();
+    const mS = document.getElementById('mScopri'), mG = document.getElementById('mSegna');
+    mS.onclick = () => { modo = 'scopri'; mS.classList.add('attivo'); mG.classList.remove('attivo'); };
+    mG.onclick = () => { modo = 'segna'; mG.classList.add('attivo'); mS.classList.remove('attivo'); };
+    document.getElementById('torna').onclick = () => Y.vai('Radici.html');
+  }
+</script>
+</body>
+</html>

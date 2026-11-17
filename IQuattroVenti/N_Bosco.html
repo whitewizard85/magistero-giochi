@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Il Bosco di Betulle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · a sud-est</p>
+    <h1>Il Bosco di Betulle</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Le betulle crescono così fitte che la nebbia resta impigliata fra i tronchi bianchi, a strati, come lana cardata. Il terreno è soffice di foglie gialle. Da qualche parte, nel folto, una voce di donna canta una canzone senza parole.</p>
+    <p>Tra gli alberi vedi tre cose: una pietra alta e grigia in una radura, coperta di segni; la bocca di una galleria scavata ai piedi di una collina, da cui escono fumo e un rumore di martelli; e, a ovest, il riflesso del lago fra i tronchi.</p>
+  </div>
+  <div class="avviso">Su una betulla, all'altezza degli occhi, qualcuno ha inciso: «Se una donna bellissima ti chiama dal bosco, guardale la schiena prima di seguirla. Se la schiena è cava come un tronco marcio, scappa.»</div>
+  <div class="scelte">
+    <button data-vai="N_Pietra.html">Avvicinati alla pietra nella radura</button>
+    <button data-vai="N_Fucina.html">Entra nella galleria ai piedi della collina</button>
+    <button data-vai="N_Lago.html">Segui il riflesso del lago, lungo la sponda sud</button>
+    <button class="pericolo" id="canto">Segui la voce che canta, nel folto</button>
+  </div>
+  <div class="scelte indietro"><button data-vai="N_Distesa.html">Torna alla distesa</button></div>
+</main>
+<script>
+  if (Y.stanza({ richiede: () => Y.fatto('cancello') })) {
+    document.querySelectorAll('[data-vai]').forEach(b => b.onclick = () => Y.vai(b.dataset.vai));
+    document.getElementById('canto').onclick = () => Y.trappola('huldra', 'La donna del bosco',
+      '<p>La trovi seduta su un tronco caduto: capelli lunghi, un sorriso che ti fa dimenticare dove stavi andando. Ti prende per mano e cammina con te fra le betulle, e tu non guardi altro che il suo viso. Quando finalmente si volta, vedi che la sua schiena è vuota come la corteccia di un albero morto. Il bosco intorno a te non è più lo stesso bosco.</p>');
+  }
+</script>
+</body>
+</html>

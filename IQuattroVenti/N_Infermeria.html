@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Casa di Eir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · infermeria</p>
+    <h1>La Casa di Eir</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Ti svegli sotto una coperta di lana grezza, in una casa bassa che profuma di resina e di erbe bollite. Il fuoco è acceso. Una donna dai capelli bianchi intrecciati ti guarda dal fondo della stanza senza fretta, come se ti aspettasse.</p>
+  </div>
+  <p id="cura"></p>
+  <p id="conta" class="nota"></p>
+  <div class="avviso" id="consiglio"></div>
+  <p class="nota">Nella tua bisaccia non manca nulla. Le rune che hai inciso sono ancora lì.</p>
+  <div class="scelte"><button id="torna">Alzati e torna dove eri</button></div>
+</main>
+<script>
+  const CURE = {
+    nokk:   ['Ti ha ripescata dal guado una lontra, dice. «O forse ero io», aggiunge, e non sorride. Ti asciuga le orecchie con un panno caldo: la musica del Nøkk resta dentro per un po\'.', 'Il violino del fiume suona solo per chi è disarmato. Il ferro freddo lo fa tacere.'],
+    corno:  ['«Hai bevuto dal corno della veggente», dice scuotendo la testa. «Quella non è birra. È la memoria di qualcun altro.» Ti dà un infuso amaro per scacciare i sogni che non sono tuoi.', 'Le cose della völva non si toccano senza il suo permesso.'],
+    draugr: ['Hai sul collo il segno freddo di una mano morta. Eir ci passa sopra un unguento che sa di aglio e di fumo. «Nel buio un draugr è padrone di casa. Davanti a una luce, è soltanto un ospite.»', 'Non entrare in un tumulo senza una luce che non tremi.'],
+    gelo:   ['Ti ha trovato rannicchiato nella neve, con le dita bianche. Ti massaggia le mani una per una, lentamente, finché non tornano rosse e doloranti.', 'Il vento del passo taglia la lana comune. Serve un mantello tessuto come si deve.'],
+    huldra: ['«Ti ha portato la huldra», dice Eir, e il suo tono è quello di chi parla di una vicina dispettosa. «Ti ha fatto girare in tondo fra le betulle finché non sei crollato.» Ti dà una tazza di latte caldo con il miele.', 'Guarda sempre la schiena di chi ti chiama dal bosco.'],
+    fenrir: ['Il morso è stato superficiale: il lupo giocava, se si può dire. Eir ti fascia il braccio e borbotta qualcosa su Týr e sulla sua mano.', 'Il lupo non si lega con una catena qualsiasi. I nani sanno farne una che lui non riconosce come tale.']
+  };
+  if (Y.stanza({ tipo: 'via' })) {
+    const id = Y.S.leggi('n_trappola') || '';
+    const c = CURE[id] || ['Eir ti rimette in piedi senza farti domande.', 'Guarda bene prima di agire.'];
+    document.getElementById('cura').textContent = c[0];
+    document.getElementById('consiglio').textContent = '«' + c[1] + '»';
+    const n = parseInt(Y.S.leggi('n_cadute') || '0', 10) || 0;
+    document.getElementById('conta').textContent = n === 1
+      ? '«È la prima volta che ti vedo. Speriamo l\'ultima.»'
+      : `«È la ${n}ª volta che finisci nel mio letto, ${Y.nome().split(' ')[0]}.»`;
+    if (Y.S.leggi('n_infermeria') !== '1') document.getElementById('torna').textContent = 'Torna sul sentiero';
+    document.getElementById('torna').onclick = () => {
+      const r = Y.S.leggi('n_ritorno') || Y.S.leggi('n_stanza') || 'N_Cancello.html';
+      Y.S.togli('n_infermeria');
+      Y.vai(r);
+    };
+    history.pushState(null, '', location.href);
+    window.addEventListener('popstate', () => history.pushState(null, '', location.href));
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Distesa delle Nebbie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri</p>
+    <h1>La Distesa delle Nebbie</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Oltre il cancello il mondo è una pianura bianca senza orizzonte. La nebbia arriva alle ginocchia, poi alla vita, poi si ritira come una marea. Non c'è vento, eppure senti freddo da tutte le parti insieme.</p>
+    <p>In mezzo alla pianura c'è un palo di frassino con cinque assi inchiodate, ognuna rivolta verso un sentiero diverso. Le scritte sono state incise da mani diverse, in tempi diversi. Nessuna dice quale strada sia quella giusta.</p>
+  </div>
+  <div class="avviso">
+    <p style="margin:0 0 .4em"><strong>Ovest</strong>: «Il lago è duro come pietra, ma chi ci scivola sopra non si ferma finché non trova un ostacolo.»</p>
+    <p style="margin:0 0 .4em"><strong>Nord</strong>: «Al guado suona qualcuno. Non è un musicista.»</p>
+    <p style="margin:0 0 .4em"><strong>Nord-est, in salita</strong>: «Il passo del vento. Oltre, la grotta del lupo.»</p>
+    <p style="margin:0 0 .4em"><strong>Est</strong>: «Tumulo di un re senza nome. Chi entra al buio, resta al buio.»</p>
+    <p style="margin:0"><strong>Sud-est</strong>: «Betulle. Martelli sotto la collina. E una voce che canta: non darle retta.»</p>
+  </div>
+  <div class="scelte">
+    <button data-vai="N_Lago.html">Ovest, verso il lago ghiacciato</button>
+    <button data-vai="N_Guado.html">Nord, verso il guado</button>
+    <button data-vai="N_Passo.html">Nord-est, su per il passo del vento</button>
+    <button data-vai="N_Tumulo.html">Est, verso il tumulo</button>
+    <button data-vai="N_Bosco.html">Sud-est, nel bosco di betulle</button>
+  </div>
+  <div class="scelte indietro"><button data-vai="N_Cancello.html">Sud, torna al cancello</button></div>
+</main>
+<script>
+  if (Y.stanza({ richiede: () => Y.fatto('cancello') })) {
+    document.querySelectorAll('[data-vai]').forEach(b => b.onclick = () => Y.vai(b.dataset.vai));
+  }
+</script>
+</body>
+</html>

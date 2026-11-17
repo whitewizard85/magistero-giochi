@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Il Cancello di Brina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .poema{font-style:italic; border-left:2px solid var(--ferro-scuro); padding:4px 0 4px 16px; margin:18px 0}
+  .poema p{margin:0 0 .6em}
+  .kenning{color:var(--brace); font-weight:600; font-style:normal; border-bottom:1px solid rgba(212,162,76,.55); white-space:nowrap}
+  .kenning sup{font-size:.62em; margin-left:2px; color:var(--brina)}
+  .griglia-k{margin:18px 0 6px; overflow-x:auto; padding-bottom:4px; --cw:clamp(19px, calc((100vw - 120px) / 13), 30px)}
+  .riga-k{display:flex; align-items:center; gap:2px; margin:3px 0; white-space:nowrap}
+  .riga-k .num{width:18px; color:var(--ferro); font-size:14px; flex:none}
+  .cella-k{width:var(--cw); height:calc(var(--cw) * 1.15); flex:none; text-align:center; font:600 calc(var(--cw) * .6) "Spectral",serif; text-transform:uppercase;
+    color:var(--brina); background:#10171E; border:1px solid var(--ardesia-3); border-radius:3px; padding:0}
+  .cella-k.colonna{border-color:var(--brace); background:rgba(212,162,76,.12)}
+  .cella-k.giusta{color:var(--aurora); border-color:rgba(127,184,165,.6)}
+  .vuoto-k{width:var(--cw); flex:none}
+  .cancello{margin:22px 0; padding:14px 16px; border:1px solid var(--ardesia-3); border-radius:6px; background:rgba(16,23,30,.4)}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · prima stanza</p>
+    <h1>Il Cancello di Brina</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>La galleria del Nord finisce contro un cancello di legno nero, alto il doppio di un uomo, coperto di brina così spessa che sembra pelliccia. Al centro, una pietra incisa. Le lettere sono antiche ma, chissà come, riesci a leggerle.</p>
+    <p>Sotto la pietra qualcuno ha intagliato cinque file di caselle vuote. Una colonna è segnata col carbone.</p>
+  </div>
+
+  <section class="gioco" id="g-canto">
+    <h2>Il canto dello scaldo</h2>
+    <p class="regole">Gli scaldi del Nord non chiamavano mai le cose per nome: le chiamavano con una <em>kenning</em>, una piccola immagine fatta di due o tre parole. Nella strofa incisa ce ne sono cinque, segnate in oro e numerate. Scrivi nella fila con lo stesso numero la cosa che ciascuna indica, e leggi la colonna di carbone.</p>
+    <div class="poema">
+      <p>Udite, figli del freddo: quando la <span class="kenning">tempesta delle spade<sup>1</sup></span> tacque sulla piana,<br>
+      il re donò al suo scaldo un anello che splendeva come i <span class="kenning">capelli di Sif<sup>2</sup></span>.</p>
+      <p>Lo scaldo ripagò il dono con l'<span class="kenning">idromele di Odino<sup>3</sup></span>, versato goccia a goccia nella sala alta.</p>
+      <p>All'alba salì sul <span class="kenning">destriero delle onde<sup>4</sup></span><br>e seguì la <span class="kenning">strada della balena<sup>5</sup></span> verso il Nord, dove la nebbia non si alza mai.</p>
+    </div>
+    <div class="griglia-k" id="griglia"></div>
+    <p class="nota" id="stato-k">Le lettere giuste diventano verdi solo quando un'intera fila è corretta.</p>
+  </section>
+
+  <div class="cancello" id="cancello">
+    <p id="testo-cancello">Il cancello non ha serratura. Sulla trave in alto c'è scritto soltanto: <em>Dimmi il nome della colonna, e passerai.</em></p>
+    <p><input type="text" id="parola" maxlength="12" placeholder="La parola della colonna" autocomplete="off"></p>
+    <div class="scelte" style="margin:10px 0 0"><button id="pronuncia">Pronuncia la parola</button></div>
+  </div>
+
+  <div class="scelte" id="uscite" hidden>
+    <button id="avanti">Attraversa il cancello</button>
+  </div>
+  <div class="scelte indietro"><button id="torna">Torna alle radici del frassino</button></div>
+</main>
+<script>
+  const RIGHE = [ // lunghezza, posizione della colonna (0-based), hash della risposta
+    { n: 9, c: 0, h: '1yujtzis5z' },
+    { n: 3, c: 1, h: 'jb9bulr4s0' },
+    { n: 6, c: 4, h: 'ph4th54ea6' },
+    { n: 4, c: 0, h: 'dqb0rrgjha' },
+    { n: 4, c: 1, h: '26bp5g2dd8b' }
+  ];
+  const H_COLONNA = '1ev631b3m69';
+  const COL = Math.max(...RIGHE.map(r => r.c));
+
+  if (Y.stanza({ richiede: () => true })) {
+    const g = document.getElementById('griglia');
+    const salvate = JSON.parse(Y.S.leggi('n_canto_righe') || '[]');
+    RIGHE.forEach((r, i) => {
+      const riga = document.createElement('div'); riga.className = 'riga-k';
+      riga.innerHTML = `<span class="num">${i + 1}</span>` + '<span class="vuoto-k"></span>'.repeat(COL - r.c);
+      for (let j = 0; j < r.n; j++) {
+        const inp = document.createElement('input');
+        inp.className = 'cella-k' + (j === r.c ? ' colonna' : '');
+        inp.maxLength = 1; inp.dataset.r = i; inp.dataset.j = j; inp.autocomplete = 'off';
+        inp.setAttribute('aria-label', `fila ${i + 1}, lettera ${j + 1}`);
+        if (salvate[i]) inp.value = salvate[i][j] || '';
+        riga.appendChild(inp);
+      }
+      g.appendChild(riga);
+    });
+    const celle = (i) => [...g.querySelectorAll(`.cella-k[data-r="${i}"]`)];
+    const controlla = () => {
+      let giuste = 0; const parole = [];
+      RIGHE.forEach((r, i) => {
+        const w = celle(i).map(c => c.value).join('');
+        parole.push(w);
+        const ok = w.length === r.n && Y.verifica(w, r.h);
+        celle(i).forEach(c => { c.classList.toggle('giusta', ok); c.readOnly = ok; });
+        if (ok) giuste++;
+      });
+      Y.S.scrivi('n_canto_righe', JSON.stringify(parole));
+      document.getElementById('stato-k').textContent = `File corrette: ${giuste} su 5.`;
+      if (giuste === 5) Y.sigilla('canto', document.getElementById('g-canto'), 'La colonna di carbone si accende di una luce bianca.');
+    };
+    g.addEventListener('input', (e) => {
+      const c = e.target; c.value = c.value.replace(/[^a-zA-Zàèéìòù]/g, '').slice(-1).toUpperCase();
+      if (c.value) {
+        const next = c.nextElementSibling;
+        if (next && next.classList.contains('cella-k') && !next.readOnly) next.focus();
+      }
+      controlla();
+    });
+    g.addEventListener('keydown', (e) => {
+      const c = e.target;
+      if (e.key === 'Backspace' && !c.value) {
+        const prev = c.previousElementSibling;
+        if (prev && prev.classList.contains('cella-k') && !prev.readOnly) { prev.focus(); prev.value = ''; e.preventDefault(); controlla(); }
+      }
+    });
+    controlla();
+
+    const aperto = () => {
+      document.getElementById('testo-cancello').innerHTML = 'La brina si stacca dal legno in lunghe scaglie e il cancello si apre verso l\'interno, senza un rumore. Di là c\'è solo bianco.';
+      document.getElementById('parola').parentElement.hidden = true;
+      document.getElementById('pronuncia').parentElement.hidden = true;
+      document.getElementById('uscite').hidden = false;
+    };
+    if (Y.fatto('cancello')) aperto();
+    document.getElementById('pronuncia').onclick = () => {
+      const w = document.getElementById('parola').value;
+      if (Y.verifica(w, H_COLONNA)) { Y.segna('cancello'); Y.suono('premio'); aperto(); }
+      else {
+        Y.suono('no');
+        Y.popup('', '<p>La parola si gela nell\'aria e cade a terra in cristalli. Il cancello non si muove.</p>');
+      }
+    };
+    document.getElementById('avanti').onclick = () => Y.vai('N_Distesa.html');
+    document.getElementById('torna').onclick = () => Y.vai('Radici.html');
+  }
+</script>
+</body>
+</html>

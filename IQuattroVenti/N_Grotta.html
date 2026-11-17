@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Grotta del Lupo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · oltre il passo</p>
+    <h1>La Grotta del Lupo</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>La grotta è alta come una sala del Magistero. Sul pavimento ci sono anelli di ferro grossi come ruote di carro, spezzati: due catene intere, ridotte a pezzi. In fondo, sdraiato davanti a un varco luminoso, c'è un lupo grigio così grande che il suo respiro ti muove i capelli da venti passi di distanza.</p>
+    <p>Apre un occhio giallo. «Un altro», dice. «Vengono tutti con una catena. Che cosa hai portato tu?»</p>
+  </div>
+  <div class="avviso" id="avviso">Il varco luminoso dietro di lui è l'unica uscita. Fra te e il varco c'è soltanto il lupo.</div>
+  <div class="scelte" id="scelte"></div>
+  <div class="scelte indietro"><button id="torna">Torna indietro, verso il passo</button></div>
+</main>
+<script>
+  function morso(come) {
+    return Y.trappola('fenrir', 'I denti del lupo', come);
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('passo') })) {
+    const box = document.getElementById('scelte');
+    const bottone = (testo, classe, fn) => { const b = document.createElement('button'); b.textContent = testo; if (classe) b.className = classe; b.onclick = fn; box.appendChild(b); };
+    function aggiorna() {
+      box.innerHTML = '';
+      if (Y.fatto('fenrir')) {
+        document.getElementById('avviso').textContent = 'Il lupo dorme, legato da un nastro sottile come un capello. Il varco è libero.';
+        bottone('Passa accanto al lupo ed esci dal varco luminoso', '', () => Y.vai('N_Soglia.html'));
+        return;
+      }
+      if (Y.fatto('laccio_mostrato')) {
+        document.getElementById('avviso').textContent = '«Un nastro di seta», ride il lupo. «Se è un trucco, voglio un pegno. Mettimi una mano fra i denti mentre mi leghi: se non riesco a liberarmi, te la rendo.»';
+        bottone('Metti la tua mano fra i suoi denti, come pegno', 'pericolo', () => morso('<p>Appoggi la mano sulla lingua del lupo. È calda, ruvida. Leghi il primo giro di Gleipnir intorno alla zampa, e il lupo, per scherzo o per prova, stringe appena le mascelle. «Appena», per un lupo come lui, è abbastanza.</p>'));
+        if (Y.ha('tizzone')) bottone('Offrigli invece in pegno il tizzone che non si spegne', 'oggetto', async () => {
+          Y.segna('fenrir'); Y.suono('premio');
+          await Y.popup('Il pegno di fuoco', '<p>Il lupo guarda la fiammella a lungo. «Un fuoco che non si spegne vale più di una mano che invecchia», dice, e la prende delicatamente fra i denti. Tu leghi. Il nastro fa tre giri intorno alle zampe e uno intorno al collo. Il lupo tira, una volta sola, e il nastro diventa più stretto. Poi chiude gli occhi e, senza lasciare il tizzone, si addormenta.</p>');
+          aggiorna();
+        });
+        if (Y.ha('chiave')) bottone('Offrigli invece in pegno la chiave d\'osso del re', 'oggetto', async () => {
+          Y.segna('fenrir'); Y.suono('premio');
+          await Y.popup('Il pegno del re', '<p>Il lupo annusa la chiave d\'osso e scopre i denti in qualcosa che somiglia a un sorriso. «La chiave di un re morto», dice. «Un pegno da re.» La stringe fra i denti e si lascia legare. Il nastro fa tre giri intorno alle zampe e uno intorno al collo. Il lupo tira una volta sola, e il nastro diventa più stretto. Poi chiude gli occhi.</p>');
+          aggiorna();
+        });
+        return;
+      }
+      if (Y.ha('gleipnir')) bottone('Srotola Gleipnir e mostralo al lupo', 'oggetto', () => { Y.segna('laccio_mostrato'); Y.suono('clic'); aggiorna(); });
+      bottone('Prova a passargli accanto in silenzio, rasente alla parete', 'pericolo', () => morso('<p>Fai tre passi lungo la parete. Al quarto, la coda del lupo si sposta pigramente e ti sbarra la strada. «Non hai portato niente», dice, quasi deluso. Poi gira la testa verso di te, molto in fretta per una bestia così grande.</p>'));
+    }
+    aggiorna();
+    document.getElementById('torna').onclick = () => Y.vai('N_Passo.html');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Fucina del Mantice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .forno{max-width:380px; margin:16px auto 8px; display:grid; grid-template-columns:64px 1fr; gap:16px; align-items:stretch}
+  .termometro{position:relative; height:300px; border:3px solid #FFFFFF; border-radius:32px; background:#170F0D; overflow:hidden}
+  .termometro .fascia{position:absolute; left:0; right:0; background:rgba(255,194,77,.28); border-top:2px dashed #FFC24D; border-bottom:2px dashed #FFC24D}
+  .termometro .livello{position:absolute; left:6px; right:6px; bottom:6px; border-radius:24px; background:linear-gradient(0deg,#FF4A1C,#FFB547); transition:height .1s linear}
+  .termometro .livello.giusto{background:linear-gradient(0deg,#FF8A3D,#FFE07A)}
+  .lato{display:flex; flex-direction:column; justify-content:space-between; gap:12px}
+  .mantice-btn{flex:1; min-height:150px; font:700 24px "Spectral",serif !important; text-align:center !important; border:3px solid #FFC24D !important; background:#4A2E24 !important; border-radius:14px !important; position:relative; user-select:none; -webkit-user-select:none; touch-action:manipulation}
+  .mantice-btn:active{background:#6A4032 !important; transform:scale(.98)}
+  .mosca{position:absolute; top:10px; right:12px; width:40px; height:40px; display:none}
+  .mosca.c{display:block; animation:ronza .25s infinite alternate}
+  @keyframes ronza{from{transform:translate(-2px,1px) rotate(-8deg)}to{transform:translate(2px,-1px) rotate(8deg)}}
+  @media (prefers-reduced-motion: reduce){ .mosca.c{animation:none} }
+  .avanz{height:16px; background:#170F0D; border:2px solid #FFFFFF; border-radius:8px; overflow:hidden}
+  .avanz span{display:block; height:100%; width:0; background:#5EE3C0; transition:width .1s linear}
+  .stato-m{font-size:16px; color:var(--brina); font-weight:600; min-height:2.6em}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Suðri · il primo lavoro</p>
+    <h1>La Fucina del Mantice</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Eitri butta nel fuoco una pelle di maiale e chiude lo sportello del forno. «Pompa», ti dice, indicando un mantice grande come una barca, «e non smettere finché non te lo dico io. Né troppo poco, né troppo. Se il fuoco cala, il cinghiale non nasce. Se il fuoco esplode, si brucia.»</p>
+    <p>Appena Eitri esce, una grossa mosca nera entra dalla finestra e comincia a ronzarti intorno. Ha gli occhi verdi e sembra che sorrida.</p>
+  </div>
+  <div class="avviso">Brokkr, da fuori: «Se arriva una mosca, ignorala! Qualunque cosa faccia, tu continua a pompare.»</div>
+
+  <section class="gioco" id="g-mantice">
+    <h2>Il mantice e la mosca</h2>
+    <p class="regole">Premi il mantice per alzare il calore del forno: il calore scende da solo, piano piano. Tieni il livello dentro la <strong>fascia dorata</strong> finché la barra verde non è piena (in tutto, 15 secondi dentro la fascia). Se il calore va oltre il bordo in alto, il cinghiale brucia; se scende quasi a zero, il fuoco si spegne: in entrambi i casi la barra verde si svuota. Quando la mosca punge, il fuoco cala più in fretta: pompa più forte.</p>
+    <div class="forno">
+      <div class="termometro" id="termometro"><div class="fascia" id="fascia"></div><div class="livello" id="livello"></div></div>
+      <div class="lato">
+        <p class="stato-m" id="statoM">Premi «Pompa» per cominciare.</p>
+        <button class="mantice-btn" id="pompa">Pompa!
+          <svg class="mosca" id="mosca" viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="13" cy="14" rx="9" ry="6" fill="rgba(220,240,255,.85)" transform="rotate(-25 13 14)"/><ellipse cx="27" cy="14" rx="9" ry="6" fill="rgba(220,240,255,.85)" transform="rotate(25 27 14)"/><ellipse cx="20" cy="24" rx="7" ry="10" fill="#111"/><circle cx="16" cy="17" r="3" fill="#3DFF9A"/><circle cx="24" cy="17" r="3" fill="#3DFF9A"/></svg>
+        </button>
+        <div><div class="avanz"><span id="avanz"></span></div><p class="nota" id="tempo" style="margin:4px 0 0">Dentro la fascia: 0,0 s su 15</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="scelte" id="trappola"></div>
+  <div class="scelte indietro"><button id="torna">Torna nella bottega</button></div>
+</main>
+<script>
+  const BASSO = 55, ALTO = 80, TROPPO = 96, SPENTO = 12, OBIETTIVO = 15, SPINTA = 7, CALO = 9, CALO_MOSCA = 17;
+  let calore = 40, dentro = 0, avvisoFino = 0, attivo = false, ultimo = 0, prossimaMosca = 0, moscaFino = 0, finito = false, timer = null;
+  const liv = document.getElementById('livello'), stato = document.getElementById('statoM');
+  const f = document.getElementById('fascia'); f.style.bottom = BASSO + '%'; f.style.height = (ALTO - BASSO) + '%';
+  function disegna() {
+    liv.style.height = `calc(${Math.max(0, Math.min(100, calore))}% - 12px)`;
+    liv.classList.toggle('giusto', calore >= BASSO && calore <= ALTO);
+    document.getElementById('avanz').style.width = Math.min(100, dentro / OBIETTIVO * 100) + '%';
+    document.getElementById('tempo').textContent = `Dentro la fascia: ${Math.min(dentro, OBIETTIVO).toFixed(1).replace('.', ',')} s su ${OBIETTIVO}`;
+  }
+  function azzera(perche) {
+    dentro = 0; calore = 40; Y.suono('no'); stato.textContent = perche; avvisoFino = performance.now() + 2800;
+  }
+  function passo(ora) {
+    if (!attivo || finito) return;
+    const dt = Math.min(0.25, (ora - ultimo) / 1000); ultimo = ora;
+    const punge = ora < moscaFino;
+    if (!punge && ora > prossimaMosca) { moscaFino = ora + 2200; prossimaMosca = ora + 2200 + 3500 + Math.random() * 3500; }
+    document.getElementById('mosca').classList.toggle('c', ora < moscaFino);
+    calore -= (punge ? CALO_MOSCA : CALO) * dt;
+    if (calore >= BASSO && calore <= ALTO) dentro += dt;
+    if (ora > avvisoFino) {
+      if (punge) stato.textContent = 'La mosca ti punge! Pompa più forte!';
+      else if (calore >= BASSO && calore <= ALTO) stato.textContent = 'Così! Tieni il fuoco nella fascia.';
+      else stato.textContent = calore > ALTO ? 'Troppo caldo: rallenta!' : 'Il fuoco cala: pompa!';
+    }
+    if (calore > TROPPO) azzera('Fiammata! Il cinghiale si è bruciato: Eitri ributta dentro la pelle. Si ricomincia.');
+    if (calore < SPENTO) azzera('Il fuoco si è quasi spento: bisogna ricominciare.');
+    disegna();
+    if (dentro >= OBIETTIVO) return vinto();
+  }
+  function avvia() {
+    attivo = true; ultimo = performance.now(); prossimaMosca = ultimo + 4000;
+    timer = setInterval(() => passo(performance.now()), 100);
+  }
+  function pompa() {
+    if (finito || Y.risolto('mantice')) return;
+    if (!attivo) avvia();
+    calore = Math.min(100, calore + SPINTA); Y.suono('clic'); disegna();
+  }
+  function vinto() {
+    finito = true; attivo = false; clearInterval(timer); document.getElementById('mosca').classList.remove('c');
+    stato.textContent = 'Eitri apre lo sportello.';
+    Y.sigilla('mantice', document.getElementById('g-mantice'), 'Dal forno esce Gullinbursti, il cinghiale dalle setole d\'oro.');
+    document.getElementById('trappola').innerHTML = '';
+    if (!Y.fatto('mantice_rivelato')) {
+      Y.segna('mantice_rivelato');
+      Y.popup('Gullinbursti', '<p>Eitri apre il forno e ne tira fuori un cinghiale vivo, con le setole d\'oro che fanno luce come una lanterna. «Corre sull\'aria e sull\'acqua, di giorno e di notte», dice Brokkr, soddisfatto. «Freyr lo adorerà.» La mosca, sul davanzale, si sfrega le zampe con aria contrariata.</p>');
+    }
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('piana') })) {
+    disegna();
+    const b = document.getElementById('pompa');
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); pompa(); });
+    b.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); pompa(); } });
+    if (Y.risolto('mantice')) { finito = true; calore = 68; dentro = OBIETTIVO; disegna(); stato.textContent = 'Il cinghiale d\'oro è già nato.'; Y.sigilla('mantice', document.getElementById('g-mantice')); }
+    else {
+      const t = document.createElement('button'); t.className = 'pericolo'; t.textContent = 'Smetti di pompare e schiaccia la mosca con le pinze roventi';
+      t.onclick = () => Y.trappola('mosca', 'La mosca dagli occhi verdi',
+        '<p>Afferri le pinze dal fuoco e colpisci. La mosca si sposta di un pelo, e le pinze roventi ti finiscono sul dorso della mano. Mentre urli, il forno, senza più aria, sbuffa una nuvola di fumo nero che ti riempie i polmoni. L\'ultima cosa che senti è una risata sottile, che non sembra proprio di una mosca.</p>');
+      document.getElementById('trappola').appendChild(t);
+    }
+    document.getElementById('torna').onclick = () => Y.vai('S_Bottega.html');
+  }
+</script>
+</body>
+</html>

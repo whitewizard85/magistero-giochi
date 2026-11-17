@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Il Braciere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .triangolo{display:block; width:100%; max-width:400px; margin:16px auto 6px; touch-action:manipulation; user-select:none}
+  .triangolo .piatto{fill:#3A2620; stroke:#FFC24D; stroke-width:.05}
+  .triangolo .buca{fill:#140D0B; stroke:#8C6A5C; stroke-width:.04}
+  .triangolo .meta{fill:#5EE3C0; stroke:#FFFFFF; stroke-width:.06; cursor:pointer}
+  .triangolo .brace{fill:url(#fuoco); stroke:#FFE0A0; stroke-width:.05; cursor:pointer}
+  .triangolo .brace.scelta{stroke:#FFFFFF; stroke-width:.12}
+  .comandi-b{display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Suðri · il quarto lavoro</p>
+    <h1>Il Braciere</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Il martello andrà temprato in una brace sola, la più forte, l'ultima rimasta di un fuoco intero. Così dice Eitri, che parla poco ma quando parla non scherza. Su un piatto di ferro a forma di triangolo ci sono quindici incavi, e in quattordici c'è una brace accesa.</p>
+    <p>«Le braci si mangiano fra loro», spiega Brokkr. «Una salta sopra l'altra, e quella saltata si spegne. Alla fine ne deve restare una. Una sola. Se ne restano due che non possono più saltare, il fuoco è sprecato.»</p>
+  </div>
+  <div class="avviso">Sul manico del braciere: «Le braci si spostano con la pinza. Chi ci soffia sopra, si brucia la faccia.»</div>
+
+  <section class="gioco" id="g-braci">
+    <h2>L'ultima brace</h2>
+    <p class="regole">Una brace può saltare sopra una brace vicina (in una delle sei direzioni del triangolo) e atterrare nell'incavo vuoto subito dopo, in linea retta: la brace saltata si spegne e viene tolta. Continua finché sul piatto resta <strong>una sola brace</strong>.</p>
+    <p class="regole"><strong>Come si gioca:</strong> tocca una brace; gli incavi dove può atterrare diventano verdi; tocca quello che scegli. Puoi annullare le mosse una alla volta.</p>
+    <svg class="triangolo" id="tri" viewBox="-0.6 -0.6 6.2 5.3" aria-label="Il braciere triangolare">
+      <defs><radialGradient id="fuoco" cx="45%" cy="40%" r="60%"><stop offset="0%" stop-color="#FFF1A8"/><stop offset="45%" stop-color="#FFB547"/><stop offset="100%" stop-color="#E5431B"/></radialGradient></defs>
+    </svg>
+    <p class="nota" id="statoS" style="text-align:center">Braci accese: 14</p>
+    <div class="comandi-b"><button id="annulla" class="piccolo">Annulla la mossa</button><button id="daCapoS" class="piccolo">Riaccendi tutto</button></div>
+  </section>
+
+  <div class="scelte" id="trappola"></div>
+  <div class="scelte indietro"><button id="torna">Torna nella bottega</button></div>
+</main>
+<script>
+  const R = 5, BUCHE = [];
+  for (let r = 0; r < R; r++) for (let c = 0; c <= r; c++) BUCHE.push(r + ',' + c);
+  const DIR = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[-1,-1]];
+  const pos = (k) => { const [r, c] = k.split(',').map(Number); return [2.5 + (c - r / 2) * 1.0, r * 0.95 + .1]; };
+  let accese, scelta = null, storia = [];
+  const iniziale = () => new Set(BUCHE.filter(k => k !== '0,0'));
+  const svg = document.getElementById('tri');
+  function mete(k) {
+    const [r, c] = k.split(',').map(Number), out = [];
+    for (const [dr, dc] of DIR) {
+      const m = (r + dr) + ',' + (c + dc), t = (r + 2 * dr) + ',' + (c + 2 * dc);
+      if (accese.has(m) && BUCHE.includes(t) && !accese.has(t)) out.push([m, t]);
+    }
+    return out;
+  }
+  const bloccato = () => [...accese].every(k => mete(k).length === 0);
+  function disegna() {
+    const vm = scelta ? mete(scelta).map(x => x[1]) : [];
+    let h = svg.querySelector('defs').outerHTML;
+    h += `<polygon class="piatto" points="2.5,-0.55 -0.45,4.45 5.45,4.45" stroke-linejoin="round"/>`;
+    BUCHE.forEach(k => {
+      const [x, y] = pos(k);
+      if (accese.has(k)) h += `<circle class="brace ${k === scelta ? 'scelta' : ''}" data-k="${k}" cx="${x}" cy="${y}" r=".36"/>`;
+      else h += `<circle class="${vm.includes(k) ? 'meta' : 'buca'}" data-k="${k}" cx="${x}" cy="${y}" r=".3"/>`;
+    });
+    svg.innerHTML = h;
+    const n = accese.size;
+    document.getElementById('statoS').textContent = n === 1 ? 'Una sola brace: perfetta.' : (bloccato() ? `Braci accese: ${n} — e nessuna può più saltare. Annulla qualche mossa o riaccendi tutto.` : `Braci accese: ${n}`);
+  }
+  function salva() { Y.S.scrivi('s_braci_stato', JSON.stringify({ a: [...accese], s: storia })); }
+  function tocca(k) {
+    if (Y.risolto('braci')) return;
+    if (accese.has(k)) { scelta = scelta === k ? null : k; Y.suono('clic'); return disegna(); }
+    if (!scelta) return;
+    const m = mete(scelta).find(x => x[1] === k); if (!m) return;
+    storia.push([scelta, m[0], k]); accese.delete(scelta); accese.delete(m[0]); accese.add(k); scelta = null;
+    Y.suono('clic'); salva(); disegna();
+    if (accese.size === 1) vinto(); else if (bloccato()) Y.suono('no');
+  }
+  function vinto() {
+    Y.sigilla('braci', document.getElementById('g-braci'), 'Resta una brace sola, bianca di calore.');
+    document.getElementById('trappola').innerHTML = '';
+    if (!Y.fatto('braci_rivelato')) {
+      Y.segna('braci_rivelato');
+      Y.popup('Mjölnir', '<p>Eitri prende l\'ultima brace con le pinze e la posa nel cuore della forgia. Ci mette sopra il ferro nero della miniera e Brokkr si attacca al mantice. La mosca torna, e stavolta punge Brokkr sulla palpebra, a sangue: lui si distrae un istante, uno solo. Quando il martello esce dal fuoco, è perfetto in tutto, tranne il manico, che è un po\' corto.</p>');
+    }
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('piana') })) {
+    let st = null; try { st = JSON.parse(Y.S.leggi('s_braci_stato') || 'null'); } catch (e) {}
+    accese = st && st.a ? new Set(st.a) : iniziale(); storia = st && st.s ? st.s : [];
+    if (Y.risolto('braci')) { accese = new Set(['4,2']); Y.sigilla('braci', document.getElementById('g-braci')); }
+    disegna();
+    svg.addEventListener('click', (e) => { const c = e.target.closest('[data-k]'); if (c) tocca(c.dataset.k); });
+    document.getElementById('annulla').onclick = () => { if (Y.risolto('braci') || !storia.length) return; const [a, m, t] = storia.pop(); accese.delete(t); accese.add(a); accese.add(m); scelta = null; salva(); disegna(); };
+    document.getElementById('daCapoS').onclick = () => { if (Y.risolto('braci')) return; accese = iniziale(); storia = []; scelta = null; salva(); disegna(); };
+    if (!Y.risolto('braci')) {
+      const t = document.createElement('button'); t.className = 'pericolo'; t.textContent = 'Soffia sulle braci per ravvivarle';
+      t.onclick = () => Y.trappola('braci', 'Il fiato sulle braci',
+        '<p>Ti chini e soffi. Le quattordici braci si svegliano tutte insieme in una vampata che ti arriva dritta in faccia, calda come una porta del forno spalancata. Senti odore di capelli bruciati, e sono i tuoi.</p>');
+      document.getElementById('trappola').appendChild(t);
+    }
+    document.getElementById('torna').onclick = () => Y.vai('S_Bottega.html');
+  }
+</script>
+</body>
+</html>

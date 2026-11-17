@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Il Tumulo del Re senza Nome</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · a est</p>
+    <h1>Il Tumulo del Re senza Nome</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>A est la nebbia si dirada intorno a una collina troppo rotonda per essere naturale. Erba secca, brina, e sul fianco un'apertura bassa incorniciata da tre lastre di pietra. Dall'interno esce un'aria più fredda di quella di fuori, e un odore di terra chiusa.</p>
+    <p>Sulla lastra in alto c'è un'iscrizione consumata. Sulle pietre davanti all'ingresso, impronte di mani: alcune entrano, nessuna esce.</p>
+  </div>
+  <div class="avviso">Sull'architrave: «Qui riposa chi non vuole riposare. Al buio è il padrone. Solo la luce lo rimette a sedere.»</div>
+  <div class="scelte" id="scelte"></div>
+  <div class="scelte indietro"><button id="torna">Torna alla distesa</button></div>
+</main>
+<script>
+  if (Y.stanza({ richiede: () => Y.fatto('cancello') })) {
+    const box = document.getElementById('scelte');
+    if (Y.fatto('tumulo')) {
+      const b = document.createElement('button'); b.textContent = 'Rientra nel tumulo, con la luce accesa';
+      b.onclick = () => Y.vai('N_Camera.html'); box.appendChild(b);
+    } else {
+      const luce = (ogg, testo, racconto) => {
+        if (!Y.ha(ogg)) return;
+        const t = document.createElement('button'); t.className = 'oggetto'; t.textContent = testo;
+        t.onclick = async () => {
+          Y.segna('tumulo'); Y.suono('premio');
+          await Y.popup('La luce entra per prima', `<p>${racconto} Da qualche parte in fondo al corridoio qualcosa si ritira con un fruscio, e una voce bassa impreca in una lingua che non conosci.</p>`);
+          Y.vai('N_Camera.html');
+        };
+        box.appendChild(t);
+      };
+      luce('tizzone', 'Solleva il tizzone che non si spegne ed entra', 'La fiamma piccola del tizzone si allunga, come se respirasse l\'aria chiusa del tumulo.');
+      luce('lanterna', 'Accendi la lanterna dei nani ed entra', 'La lanterna dei nani manda una luce bianca e ferma, che non trema nemmeno nelle correnti d\'aria.');
+      const a = document.createElement('button'); a.className = 'pericolo';
+      a.textContent = 'Entra a tentoni, al buio';
+      a.onclick = () => Y.trappola('draugr', 'Al buio è il padrone',
+        '<p>Fai dieci passi nel nero assoluto, la mano contro la parete umida. Al decimo, la parete finisce. Al posto della pietra trovi qualcosa di secco e di freddo che ti stringe il polso, e poi la gola. Senti un respiro che non è il tuo, e non è nemmeno un respiro vivo.</p>');
+      box.appendChild(a);
+    }
+    document.getElementById('torna').onclick = () => Y.vai('N_Distesa.html');
+  }
+</script>
+</body>
+</html>

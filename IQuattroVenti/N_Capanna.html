@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Capanna della Völva</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .ruote{margin:16px 0 10px; display:flex; flex-direction:column; gap:12px}
+  .ruota{display:grid; grid-template-columns:76px 1fr; align-items:center; gap:8px}
+  .ruota .chi{font-family:"IM Fell English SC",serif; font-size:18px; color:var(--brina); line-height:1.1}
+  .ruota .chi small{display:block; font-family:"Spectral",serif; font-size:12.5px; color:var(--ferro); font-style:italic}
+  .nastro{display:grid; grid-template-columns:repeat(8,1fr); gap:3px; position:relative}
+  .nastro span{aspect-ratio:1/1.15; display:flex; align-items:center; justify-content:center; font:600 clamp(15px,4.4vw,21px) "Spectral",serif;
+    background:#10171E; border:1px solid var(--ardesia-3); border-radius:3px; color:var(--ferro)}
+  .nastro span.fin{color:var(--brina); background:#1A2631; border-color:var(--ferro)}
+  .nastro::before{content:""; position:absolute; left:-4px; top:-4px; bottom:-4px; width:calc(50% + 2px); border:2px solid var(--brace); border-radius:5px; pointer-events:none; opacity:.8}
+  .tasti-norne{display:flex; flex-direction:column; gap:8px; margin-top:16px}
+  .tasti-norne button{font-size:16px}
+  .tasti-norne small{display:block; color:var(--ferro); font-size:13.5px}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · oltre il guado</p>
+    <h1>La Capanna della Völva</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>La capanna è più grande dentro che fuori. Al centro brucia un focolare basso, e intorno al fuoco pendono dal soffitto mazzi di erbe, ossa di uccello, campanelli di rame. Su un alto sedile di legno siede una donna con un mantello blu scuro e un bastone appoggiato al ginocchio. Ha gli occhi chiusi.</p>
+    <p>«Sei venuto per il fuoco», dice senza aprirli. «Tutti vengono per il fuoco. Prima, però, mostrami che sai leggere quello che le tre sorelle filano sotto il frassino.»</p>
+    <p>Su un tavolo accanto a lei c'è un corno da bere decorato d'argento, ancora pieno. In fondo alla stanza, una tenda di lana copre un'apertura.</p>
+  </div>
+  <div class="avviso">«E non toccare niente che non ti abbia dato io», aggiunge la völva. «Niente.»</div>
+
+  <section class="gioco" id="g-norne">
+    <h2>La ruota delle Norne</h2>
+    <p class="regole">Davanti alla völva girano tre nastri di lettere, uno per ogni Norna: Urðr, ciò che è stato; Verðandi, ciò che sta accadendo; Skuld, ciò che sarà. Ogni nastro è un anello: quando avanza, la lettera che esce a sinistra rientra a destra. Le Norne però non lavorano mai da sole: ciascuna, quando la chiami, fa avanzare anche il nastro di una sorella. Nella cornice d'oro devono comparire, tutte insieme, tre parole del freddo.</p>
+    <div class="ruote" id="ruote"></div>
+    <div class="tasti-norne" id="tasti"></div>
+    <p class="nota" id="contaN">Chiamate: 0</p>
+    <div class="scelte" style="margin:8px 0 0"><button id="daCapoN" class="piccolo">Rimetti i nastri come all'inizio</button></div>
+  </section>
+
+  <div class="scelte" id="scelte"></div>
+  <div class="scelte indietro"><button id="torna">Riattraversa il guado verso la distesa</button></div>
+</main>
+<script>
+  const NASTRI = [
+    { chi: 'Urðr', cosa: 'ciò che è stato', lettere: 'BUIONTSE' },
+    { chi: 'Verðandi', cosa: 'ciò che accade', lettere: 'GELOARFM' },
+    { chi: 'Skuld', cosa: 'ciò che sarà', lettere: 'NEVEDLKH' }
+  ];
+  const EFFETTI = [[1, 0, 3], [3, 1, 0], [0, 2, 1]];
+  const INIZIO = [5, 2, 6];
+  let rot, chiamate;
+  const ruote = document.getElementById('ruote');
+  function disegna() {
+    ruote.innerHTML = '';
+    NASTRI.forEach((n, k) => {
+      const d = document.createElement('div'); d.className = 'ruota';
+      let html = `<div class="chi">${n.chi}<small>${n.cosa}</small></div><div class="nastro">`;
+      for (let i = 0; i < 8; i++) html += `<span class="${i < 4 ? 'fin' : ''}">${n.lettere[(i + rot[k]) % 8]}</span>`;
+      d.innerHTML = html + '</div>'; ruote.appendChild(d);
+    });
+    document.getElementById('contaN').textContent = 'Chiamate: ' + chiamate;
+  }
+  function salva() { Y.S.scrivi('n_norne_stato', JSON.stringify({ rot, chiamate })); }
+  function chiama(k) {
+    if (Y.risolto('norne')) return;
+    rot = rot.map((r, i) => (r + EFFETTI[k][i]) % 8); chiamate++;
+    Y.suono('clic'); disegna(); salva();
+    if (rot.every(r => r === 0)) {
+      Y.sigilla('norne', document.getElementById('g-norne'), `Le tre parole si sono allineate dopo ${chiamate} chiamate.`);
+      Y.popup('', '<p>La völva apre gli occhi per la prima volta. Sono bianchi come la nebbia. «Buio era. Gelo è. Neve sarà», dice. «Così fino alla primavera. Adesso puoi prendere il fuoco.»</p>');
+      aggiornaScelte();
+    }
+  }
+
+  function aggiornaScelte() {
+    const box = document.getElementById('scelte'); box.innerHTML = '';
+    if (!Y.ha('tizzone')) {
+      const f = document.createElement('button'); f.className = 'oggetto';
+      f.textContent = 'Prendi un tizzone dal focolare';
+      f.onclick = async () => {
+        if (!Y.risolto('norne')) { Y.suono('no'); return Y.popup('', '<p>Il bastone della völva si abbassa davanti alla tua mano prima che tu arrivi alle braci. «Non ancora», dice. «Prima le Norne.»</p>'); }
+        Y.prendi('tizzone'); Y.suono('premio');
+        await Y.popup('Un tizzone che non si spegne', '<p>Il legno brucia piano, con una fiamma piccola e ostinata che non scotta la mano. «Viene da molto a sud», dice la völva. «Da un mondo dove non c\'è altro che fuoco. Al buio, i morti lo temono.»</p>', [{ testo: 'Lo metti nella bisaccia' }], 'premio');
+        aggiornaScelte();
+      };
+      box.appendChild(f);
+    }
+    const c = document.createElement('button'); c.className = 'pericolo';
+    c.textContent = 'Bevi un sorso dal corno d\'argento';
+    c.onclick = () => Y.trappola('corno', 'Una vita che non è tua',
+      '<p>Il liquido è denso e dolce come miele. Per un istante sei su una nave, poi in una battaglia, poi vecchio in un letto: ricordi che non ti appartengono ti passano addosso come un\'onda. Senti la völva sospirare, lontanissima: «Te l\'avevo detto.»</p>');
+    box.appendChild(c);
+    const t = document.createElement('button');
+    t.textContent = 'Scosta la tenda in fondo alla stanza';
+    t.onclick = () => Y.vai('N_Telaio.html');
+    box.appendChild(t);
+    const p = document.createElement('button');
+    p.textContent = 'Esci dal retro e prendi il sentiero ripido che sale verso il passo';
+    p.onclick = async () => {
+      if (!Y.fatto('sentiero_capanna')) {
+        Y.segna('sentiero_capanna');
+        await Y.popup('', '<p>Il sentiero sale fra le rocce, stretto e sdrucciolevole. Quando sei quasi in cima senti un rombo alle tue spalle: un pezzo di montagna è scivolato giù e il sentiero non c\'è più. Da qui alla capanna si torna solo dal guado.</p>');
+      }
+      Y.vai('N_Passo.html');
+    };
+    box.appendChild(p);
+  }
+
+  if (Y.stanza({ richiede: () => Y.fatto('nokk') })) {
+    const st = JSON.parse(Y.S.leggi('n_norne_stato') || 'null');
+    rot = st ? st.rot : INIZIO.slice(); chiamate = st ? st.chiamate : 0;
+    if (Y.risolto('norne')) { rot = [0, 0, 0]; Y.sigilla('norne', document.getElementById('g-norne')); }
+    const tasti = document.getElementById('tasti');
+    const ordinali = ['il primo', 'il secondo', 'il terzo'];
+    NASTRI.forEach((n, k) => {
+      const b = document.createElement('button');
+      const parti = EFFETTI[k].map((e, i) => e ? `${NASTRI[i].chi} di ${e}` : null).filter(Boolean);
+      b.innerHTML = `Chiama ${n.chi}<small>fa avanzare ${parti.join(' e ')}</small>`;
+      b.onclick = () => chiama(k); tasti.appendChild(b);
+    });
+    document.getElementById('daCapoN').onclick = () => { if (Y.risolto('norne')) return; rot = INIZIO.slice(); chiamate = 0; disegna(); salva(); };
+    disegna(); aggiornaScelte();
+    document.getElementById('torna').onclick = () => Y.vai('N_Guado.html');
+  }
+</script>
+</body>
+</html>

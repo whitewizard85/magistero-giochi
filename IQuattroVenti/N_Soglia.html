@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Soglia di Norðri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .tavoletta{font-family:"Noto Sans Runic",sans-serif; font-size:40px; letter-spacing:.35em; color:var(--brina); text-align:center; margin:18px 0; padding:14px 0; border-top:1px solid var(--ardesia-3); border-bottom:1px solid var(--ardesia-3)}
+  table.codici{width:100%; border-collapse:collapse; margin:14px 0; font-size:16px}
+  table.codici td{padding:7px 4px; border-bottom:1px solid var(--ardesia-3); vertical-align:top}
+  table.codici td.codice{font-family:"Spectral",serif; font-weight:600; color:var(--brina); white-space:nowrap; text-align:right; letter-spacing:.06em}
+  .pergamena{margin-top:22px; padding:18px 16px; background:rgba(16,23,30,.6); border:1px solid rgba(127,184,165,.45); border-radius:6px}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · l'ultimo passo</p>
+    <h1>La Soglia di Norðri</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Il varco si apre su un ponte di ghiaccio sospeso nel vuoto. Sotto non c'è niente: solo nebbia, una nebbia così densa e antica che sembra la materia di cui sono fatte tutte le altre. Dall'abisso sale il rumore di un'acqua che bolle.</p>
+    <p>A metà del ponte, seduto sul parapetto con le gambe penzoloni, c'è un nano con la barba piena di brina. Sulle spalle regge un pezzo di cielo, come se fosse un sacco di grano.</p>
+    <p>«Io sono Norðri», dice. «Tengo su l'angolo settentrionale del mondo, e non ho tempo per le chiacchiere. Mostrami le rune che hai inciso. Leggimele. Dimmi come si chiama, nella tua lingua, il mondo che c'è laggiù sotto il ponte.»</p>
+  </div>
+  <div class="tavoletta" id="tavoletta"></div>
+  <p class="nota">Le rune incise sopra il nome di ogni luogo che hai attraversato dicono le stesse cose del nome, in un'altra scrittura.</p>
+  <div id="domanda">
+    <p><input type="text" id="risposta" maxlength="20" placeholder="Il nome del mondo" autocomplete="off"></p>
+    <div class="scelte" style="margin:10px 0 0"><button id="rispondi">Rispondi a Norðri</button></div>
+  </div>
+  <div class="pergamena" id="pergamena" hidden></div>
+  <div class="scelte indietro"><button id="radici">Torna alle radici del frassino</button></div>
+</main>
+<script>
+  const H_MONDO = '1qp3rk8hg4w';
+  function finale() {
+    document.getElementById('domanda').hidden = true;
+    const righe = Y.ORDINE.map(g => `<tr><td>${Y.GIOCHI[g].nome}<br><span class="nota">${Y.GIOCHI[g].stanza}</span></td><td class="codice">${Y.codice(g)}</td></tr>`).join('');
+    const cadute = parseInt(Y.S.leggi('n_cadute') || '0', 10) || 0;
+    const p = document.getElementById('pergamena'); p.hidden = false;
+    p.innerHTML = `<p>«Nebbia», ripete Norðri, e annuisce. «Niflheim, la dimora della nebbia. Il primo mondo e il più freddo.» Si sistema il cielo sulle spalle. «Vai, ${Y.nome()}. Tra una settimana soffierà un altro vento.»</p>
+      <p><strong>${Y.nome()}</strong> · ${Y.casa()}<br><span class="nota">Parola della via: NEBBIA · Risvegli nella Casa di Eir: ${cadute}</span></p>
+      <table class="codici">${righe}</table>
+      <p>Invia alla <strong>Voce del Magistero</strong>, in privato, la parola della via e i sei codici (va bene anche uno screenshot di questa pagina). Poi commenta «fatto» sotto il post del Labirinto.</p>
+      <p class="nota">I codici dipendono dal nome con cui hai iniziato: non cambiarlo.</p>`;
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('fenrir') })) {
+    document.getElementById('tavoletta').textContent = Y.ORDINE.filter(Y.risolto).map(g => Y.GIOCHI[g].runa).join('');
+    if (Y.fatto('fine')) finale();
+    const mancanti = Y.ORDINE.filter(g => !Y.risolto(g));
+    if (mancanti.length && !Y.fatto('fine')) {
+      document.getElementById('domanda').innerHTML = `<p>Norðri conta le rune sulla tua tavoletta e scuote la testa. «${mancanti.length === 1 ? 'Ne manca una' : 'Ne mancano ' + mancanti.length}. Non leggo un nome a metà. Torna quando le avrai tutte.»</p><p class="nota">Prove ancora da superare: ${mancanti.map(g => Y.GIOCHI[g].nome + ' (' + Y.GIOCHI[g].stanza + ')').join('; ')}.</p><div class="scelte"><button id="indietroGrotta">Torna nella grotta</button></div>`;
+      document.getElementById('indietroGrotta').onclick = () => Y.vai('N_Grotta.html');
+    }
+    if (document.getElementById('rispondi')) document.getElementById('rispondi').onclick = () => {
+      const r = document.getElementById('risposta').value;
+      if (Y.verifica(r, H_MONDO)) { Y.segna('fine'); Y.suono('ok'); finale(); }
+      else { Y.suono('no'); Y.popup('', '<p>Norðri sbuffa, e il suo fiato diventa una piccola nuvola di brina. «No. Guarda meglio le tue rune.»</p>'); }
+    };
+    document.getElementById('radici').onclick = () => Y.vai('Radici.html');
+  }
+</script>
+</body>
+</html>

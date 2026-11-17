@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Sala del Corno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .canali{display:block; width:100%; max-width:460px; margin:16px auto 6px; touch-action:manipulation; user-select:none}
+  .canali .lastra{fill:#2E3660; stroke:#11152B; stroke-width:.04; cursor:pointer}
+  .canali .lastra:hover{fill:#3A4475}
+  .canali .tubo{stroke:#C5CBE8; stroke-width:.24; stroke-linecap:round; pointer-events:none}
+  .canali .tubo.acqua{stroke:#4FE3B2}
+  .canali .nodo{fill:#C5CBE8; pointer-events:none}
+  .canali .nodo.acqua{fill:#4FE3B2}
+  .canali .bordo{fill:none; stroke:#E8ECFA; stroke-width:.06}
+  .canali .etichetta{font:600 .32px "Spectral",serif; fill:#FFFFFF; text-anchor:middle}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Austri · la terza sala</p>
+    <h1>La Sala del Corno</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Il coppiere del re ti porge un corno da bere lungo quanto un uomo, pieno fino all'orlo di qualcosa che luccica come acqua al sole. «Qui da noi un buon bevitore lo svuota in un sorso», dice. «Uno mediocre in due. Nessuno ha bisogno di tre.»</p>
+    <p>Ma la punta del corno non finisce: entra nel pavimento, fra lastre di pietra incise da canali, e da qualche parte sotto i tuoi piedi si sente il rumore della risacca. Il coppiere sorride. «Prima di bere, vuoi sapere dove va a finire?»</p>
+  </div>
+  <div class="avviso">Sul piedistallo del corno: «Chi beve senza sapere da dove viene la bevanda, beve finché la bevanda lo vuole.»</div>
+
+  <section class="gioco" id="g-corno">
+    <h2>Il corno senza fondo</h2>
+    <p class="regole">Ruota le lastre del pavimento finché i canali non formano un'unica rete, dalla punta del corno (a sinistra) fino al mare (a destra). Alla fine ogni canale deve combaciare con quello della lastra accanto: nessuna estremità può restare aperta e tutte le lastre devono far parte della rete.</p>
+    <p class="regole"><strong>Come si gioca:</strong> tocca una lastra per ruotarla di un quarto di giro in senso orario. I canali raggiunti dall'acqua del corno diventano verdi.</p>
+    <svg class="canali" id="canali" viewBox="-1.35 -0.25 8.7 6.5" aria-label="Le lastre con i canali"></svg>
+    <p class="nota" id="statoC" style="text-align:center">Lastre raggiunte dall'acqua: 0 su 36</p>
+    <div class="scelte" style="margin:8px 0 0"><button id="daCapoC" class="piccolo">Rimetti le lastre come all'inizio</button></div>
+  </section>
+
+  <div class="scelte" id="trappola"></div>
+  <div class="scelte indietro"><button id="torna">Torna nel cortile</button></div>
+</main>
+<script>
+  const W = 6, H = 6, SORGENTE = 2, MARE = 3;
+  const SOLUZIONE = [["S","ES","SO","ES","EO","SO"],["NE","NSO","NS","N","ES","NSO"],["ESO","NSO","N","E","NSO","NS"],["NS","NS","S","ES","NSO","NE"],["NS","NES","NO","NS","NE","O"],["N","NE","EO","NEO","EO","O"]];
+  const ROTAZIONI = [[2,2,1,1,2,1],[1,2,3,3,2,3],[2,2,3,2,1,2],[3,3,3,3,3,1],[3,3,2,2,1,3],[1,1,1,2,3,1]];
+  // nella soluzione la lastra della sorgente ha già l'apertura verso il corno (O), quella del mare verso il mare (E)
+  const GIRO = { N: 'E', E: 'S', S: 'O', O: 'N' }, OPP = { N: 'S', S: 'N', E: 'O', O: 'E' }, DIR = { N: [0, -1], E: [1, 0], S: [0, 1], O: [-1, 0] };
+  const ruota = (aperture, k) => { let a = aperture.split(''); for (let i = 0; i < k; i++) a = a.map(d => GIRO[d]); return a.join(''); };
+  let lastre;
+  const inizio = () => SOLUZIONE.map((r, y) => r.map((t, x) => ruota(t, ROTAZIONI[y][x])));
+  const svg = document.getElementById('canali');
+  function bagnate() {
+    const dentro = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
+    const viste = new Set();
+    if (!lastre[SORGENTE][0].includes('O')) return viste;
+    const pila = [[0, SORGENTE]]; viste.add('0,' + SORGENTE);
+    while (pila.length) {
+      const [x, y] = pila.pop();
+      for (const d of lastre[y][x]) {
+        const nx = x + DIR[d][0], ny = y + DIR[d][1];
+        if (!dentro(nx, ny) || viste.has(nx + ',' + ny)) continue;
+        if (lastre[ny][nx].includes(OPP[d])) { viste.add(nx + ',' + ny); pila.push([nx, ny]); }
+      }
+    }
+    return viste;
+  }
+  function completo(bag) {
+    if (bag.size !== W * H) return false;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) for (const d of lastre[y][x]) {
+      const nx = x + DIR[d][0], ny = y + DIR[d][1];
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) {
+        if (!((x === 0 && y === SORGENTE && d === 'O') || (x === W - 1 && y === MARE && d === 'E'))) return false;
+      } else if (!lastre[ny][nx].includes(OPP[d])) return false;
+    }
+    return lastre[MARE][W - 1].includes('E');
+  }
+  function disegna() {
+    const bag = bagnate(); let h = '';
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const a = lastre[y][x], w = bag.has(x + ',' + y) ? 'acqua' : '';
+      h += `<rect class="lastra" data-x="${x}" data-y="${y}" x="${x + .03}" y="${y + .03}" width=".94" height=".94" rx=".08"/>`;
+      for (const d of a) h += `<line class="tubo ${w}" x1="${x + .5}" y1="${y + .5}" x2="${x + .5 + DIR[d][0] * .5}" y2="${y + .5 + DIR[d][1] * .5}"/>`;
+      if (a.length === 1) h += `<circle class="nodo ${w}" cx="${x + .5}" cy="${y + .5}" r=".2"/>`;
+    }
+    h += `<rect class="bordo" x="0" y="0" width="${W}" height="${H}" rx=".08"/>`;
+    // il corno, a sinistra
+    const sy = SORGENTE + .5;
+    h += `<path d="M-1.25 ${sy - .55} Q -.6 ${sy - .35} 0 ${sy - .12} L 0 ${sy + .12} Q -.6 ${sy + .1} -1.25 ${sy + .55} Z" fill="#FFB547" stroke="#FFFFFF" stroke-width=".04"/>`;
+    h += `<text class="etichetta" x="-.72" y="${sy - .75}">corno</text>`;
+    // il mare, a destra
+    const my = MARE + .5, pieno = bag.has((W - 1) + ',' + MARE) && lastre[MARE][W - 1].includes('E');
+    h += `<path d="M${W} ${my - .7} q .35 -.15 .7 0 t .65 0 L ${W + 1.35} ${my + .7} q -.35 .15 -.7 0 t -.65 0 Z" fill="${pieno ? '#4FE3B2' : '#5C77B8'}" stroke="#FFFFFF" stroke-width=".04"/>`;
+    h += `<text class="etichetta" x="${W + .68}" y="${my - .85}">mare</text>`;
+    svg.innerHTML = h;
+    document.getElementById('statoC').textContent = `Lastre raggiunte dall'acqua: ${bag.size} su ${W * H}`;
+    return completo(bag);
+  }
+  function salva() { Y.S.scrivi('e_corno_stato', JSON.stringify(lastre)); }
+  function vinto() {
+    Y.sigilla('corno', document.getElementById('g-corno'), 'L\'acqua del corno scorre fino al mare.');
+    document.getElementById('trappola').innerHTML = '';
+    if (!Y.fatto('corno_rivelato')) {
+      Y.segna('corno_rivelato');
+      Y.popup('Tre sorsi', '<p>Ora che sai dove va a finire, bevi. Un sorso, due, tre, lunghi come respiri trattenuti. Il livello nel corno scende appena di un dito. Il coppiere però è impallidito: da sotto il pavimento arriva un rumore di onde che si ritirano, molto lontano, come se il mare intero si fosse abbassato.</p>');
+    }
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('fiume') })) {
+    try { lastre = JSON.parse(Y.S.leggi('e_corno_stato') || 'null'); } catch (e) { lastre = null; }
+    if (!lastre || lastre.length !== H) lastre = inizio();
+    svg.addEventListener('click', (e) => {
+      const r = e.target.closest('.lastra'); if (!r || Y.risolto('corno')) return;
+      const x = +r.dataset.x, y = +r.dataset.y; lastre[y][x] = ruota(lastre[y][x], 1);
+      Y.suono('clic'); salva(); if (disegna()) vinto();
+    });
+    if (disegna() || Y.risolto('corno')) Y.sigilla('corno', document.getElementById('g-corno'));
+    if (!Y.risolto('corno')) {
+      const b = document.createElement('button'); b.className = 'pericolo'; b.textContent = 'Lascia perdere le lastre e bevi subito dal corno';
+      b.onclick = () => Y.trappola('mare', 'La bevanda che non finisce',
+        '<p>Bevi. È salata. Bevi ancora, perché il coppiere ti guarda e i giganti ridono, e il corno non si svuota: si riempie. L\'acqua ti sale in gola, nel naso, negli occhi, fredda e verde come il fondo del mare, e l\'ultima cosa che senti è il rumore della risacca dentro le orecchie.</p>');
+      document.getElementById('trappola').appendChild(b);
+    }
+    document.getElementById('daCapoC').onclick = () => { if (Y.risolto('corno')) return; lastre = inizio(); salva(); disegna(); };
+    document.getElementById('torna').onclick = () => Y.vai('E_Corte.html');
+  }
+</script>
+</body>
+</html>

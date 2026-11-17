@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>I Quattro Venti di Yggdrasil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Il Labirinto di novembre del Magistero</p>
+    <h1>I Quattro Venti di Yggdrasil</h1>
+    <div class="rune"></div>
+  </header>
+
+  <div class="saga">
+    <p>Quando le notti si allungano e la nebbia sale dai fiordi, sotto il Magistero si apre una porta che per il resto dell'anno nessuno trova. Dietro c'è una radice. Dietro la radice, un frassino così grande che i suoi rami reggono i mondi.</p>
+    <p>Ai quattro angoli del cielo stanno quattro nani. Ognuno custodisce un vento, e ogni vento apre una via. Una alla settimana, per tutto novembre.</p>
+  </div>
+
+  <div id="continua" hidden>
+    <p>Bentornato, <strong id="giaNome"></strong>. Le tue rune e la tua bisaccia ti aspettano dove le hai lasciate.</p>
+    <div class="scelte">
+      <button id="btnContinua">Riprendi il cammino</button>
+      <button id="btnNuovo" class="pericolo">Sono un altro viandante: ricomincia da zero</button>
+    </div>
+  </div>
+
+  <form id="nuovo" hidden autocomplete="off">
+    <p>Scrivi il nome con cui ti conoscono al Magistero: i codici delle prove dipendono da questo nome, quindi scrivilo come lo scriveresti nel modulo delle consegne.</p>
+    <p><label for="nome" class="nota">Nome e cognome</label><br><input type="text" id="nome" maxlength="40" required></p>
+    <p class="nota">Scegli il tuo dipartimento per scendere fra le radici</p>
+    <div class="scelte" id="case">
+      <button type="button" data-casa="Auror">Auror</button>
+      <button type="button" data-casa="Spezzaincantesimi">Spezzaincantesimi</button>
+      <button type="button" data-casa="Magizoologia">Magizoologia</button>
+    </div>
+    <p class="nota" id="errore" hidden>Prima scrivi il tuo nome, poi scegli il dipartimento.</p>
+  </form>
+</main>
+<script>
+  Y.stanza({ tipo: 'neutra' });
+  const nomeSalvato = Y.S.leggi('nome');
+    if (nomeSalvato) {
+    document.getElementById('continua').hidden = false;
+    document.getElementById('giaNome').textContent = nomeSalvato;
+  } else document.getElementById('nuovo').hidden = false;
+
+  document.getElementById('btnContinua').onclick = () => {
+    const inf = Y.S.leggi('n_infermeria') === '1';
+    Y.vai(inf ? 'N_Infermeria.html' : 'Radici.html');
+  };
+  document.getElementById('btnNuovo').onclick = async () => {
+    const r = await Y.popup('Ricominciare?', '<p>Tutte le prove risolte, le rune e gli oggetti di questo dispositivo andranno perduti.</p>',
+      [{ testo: 'Sì, ricomincia da zero', classe: 'pericolo', valore: 1 }, { testo: 'No, torna indietro', valore: 0 }]);
+    if (r) { Y.S.azzera(); location.reload(); }
+  };
+  // scelto il dipartimento si scende subito alla scelta dei venti
+  document.querySelectorAll('#case button').forEach(b => b.onclick = () => {
+    const n = document.getElementById('nome').value.trim();
+    if (!n) { document.getElementById('errore').hidden = false; Y.suono('no'); document.getElementById('nome').focus(); return; }
+    Y.S.scrivi('nome', n); Y.S.scrivi('casa', b.dataset.casa);
+    Y.suono('clic'); Y.vai('Radici.html');
+  });
+  document.getElementById('nuovo').onsubmit = (e) => { e.preventDefault(); };
+</script>
+</body>
+</html>

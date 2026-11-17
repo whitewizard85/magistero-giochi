@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Pietra della Radura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .incisione{font-family:"Noto Sans Runic",sans-serif; font-size:26px; letter-spacing:.18em; color:var(--brina); text-align:center; line-height:1.6; margin:20px 0 8px; padding:16px 8px; background:rgba(16,23,30,.55); border:1px solid var(--ardesia-3); border-radius:6px; word-break:break-all}
+  .graffio{text-align:center; font-style:italic; color:var(--ferro)}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · nel bosco</p>
+    <h1>La Pietra della Radura</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>La pietra è alta il doppio di te e leggermente inclinata, come se ascoltasse qualcosa. I segni sono incisi in una spirale che gira intorno alla pietra. Qualcuno ci ha passato dentro dell'ocra rossa, tanto tempo fa, e ne restano tracce nei solchi.</p>
+    <p>Alla base, graffiata con una punta di coltello e molto più recente, c'è una riga in una scrittura che conosci.</p>
+  </div>
+  <div class="incisione" id="incisione"></div>
+  <p class="graffio">«Norðri regge il cielo» — tradotto da un viandante che è passato prima di te</p>
+  <p class="nota">Non c'è nient'altro, qui. Ma chi deve leggere delle rune, più avanti, forse farebbe bene a ricordarsi di questa pietra.</p>
+  <div class="scelte indietro"><button id="torna">Torna fra le betulle</button></div>
+</main>
+<script>
+  if (Y.stanza({ richiede: () => Y.fatto('cancello') })) {
+    document.getElementById('incisione').textContent = Y.inRune('Nordri regge il cielo');
+    document.getElementById('torna').onclick = () => Y.vai('N_Bosco.html');
+  }
+</script>
+</body>
+</html>

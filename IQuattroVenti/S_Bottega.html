@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Bottega dei Fratelli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .porte{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:22px 0}
+  .porte button{min-height:104px; display:flex; flex-direction:column; justify-content:center; border-left-width:4px}
+  .porte .sfida{font-family:"IM Fell English SC",serif; font-size:19px; color:var(--brina); line-height:1.15}
+  .porte .chi{font-size:14.5px; color:var(--ferro); margin-top:4px}
+  .porte .esito{font-size:14px; margin-top:6px; color:var(--aurora); font-weight:600}
+  .porte button.vinta{border-left-color:var(--aurora)}
+  .giudizio-porta{border-left-color:var(--brace) !important}
+  @media (max-width:360px){ .porte{grid-template-columns:1fr} }
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Suðri · oltre la piana</p>
+    <h1>La Bottega dei Fratelli</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>La fucina è scavata nel fianco di una collina nera, e dentro fa così caldo che l'aria trema. Ci lavorano due nani fratelli: Eitri, che non alza mai gli occhi dall'incudine, e Brokkr, che parla per tutti e due. Brokkr è furioso.</p>
+    <p>«Quel Loki», sbotta, «ha scommesso la sua testa che non sappiamo fare doni più belli di quelli dei figli di Ivaldi: la nave che si piega in tasca, la lancia che non manca il bersaglio, i capelli d'oro per la moglie di Thor. E noi quella testa la vogliamo. Ma abbiamo quattro lavori da finire prima di presentarci agli dèi, e solo due paia di mani.» Ti guarda dall'alto in basso, che per un nano è uno sforzo. «Tu ne hai un altro paio. Scegli da dove cominciare.»</p>
+  </div>
+  <div class="avviso">Appeso al muro, un cartello scritto in fretta da Eitri: «Se un tipo dai capelli rossi ti propone una scommessa, NON scommettere niente. Soprattutto la testa.»</div>
+
+  <div class="porte" id="porte"></div>
+  <div class="scelte" id="altro"></div>
+  <div class="scelte indietro"><button id="torna">Torna sulla piana di cenere</button></div>
+</main>
+<script>
+  const SALE = [
+    { g: 'mantice',  pag: 'S_Mantice.html',  sfida: 'Il mantice',            chi: 'il cinghiale d\'oro' },
+    { g: 'draupnir', pag: 'S_Anello.html',   sfida: 'La stanza dell\'anello', chi: 'l\'anello che si moltiplica' },
+    { g: 'torce',    pag: 'S_Galleria.html', sfida: 'La galleria buia',      chi: 'il ferro per il martello' },
+    { g: 'braci',    pag: 'S_Braciere.html', sfida: 'Il braciere',           chi: 'la brace per la tempra' }
+  ];
+  if (Y.stanza({ richiede: () => Y.fatto('piana') })) {
+    const box = document.getElementById('porte');
+    SALE.forEach(s => {
+      const b = document.createElement('button'); const v = Y.risolto(s.g);
+      if (v) b.classList.add('vinta');
+      b.innerHTML = `<span class="sfida">${s.sfida}</span><span class="chi">${s.chi}</span>${v ? '<span class="esito">✓ fatto</span>' : ''}`;
+      b.onclick = () => Y.vai(s.pag); box.appendChild(b);
+    });
+    const fatti = SALE.filter(s => Y.risolto(s.g)).length;
+    const altro = document.getElementById('altro');
+    const t = document.createElement('button'); t.className = 'giudizio-porta';
+    if (fatti === 4) {
+      t.textContent = 'Porta i doni davanti agli dèi';
+      t.onclick = () => Y.vai('S_Giudizio.html');
+    } else {
+      t.innerHTML = `Porta i doni davanti agli dèi <span class="nota">(lavori finiti: ${fatti} su 4)</span>`;
+      t.onclick = () => Y.popup('', `<p>Brokkr ti sbarra la strada con un braccio grosso come un tronco. «Con ${fatti} lavori su quattro? Loki ci riderebbe in faccia. Finiamo, prima.»</p>`);
+    }
+    altro.appendChild(t);
+    const l = document.createElement('button'); l.className = 'pericolo';
+    l.textContent = 'Ascolta il viandante dai capelli rossi che ti propone una scommessa';
+    l.onclick = () => Y.trappola('loki', 'La scommessa',
+      '<p>È simpatico, il viandante. Sorride, ti dà una pacca sulla spalla, ti propone una scommessa da niente: indovina in che mano tiene la moneta. La posta? «La tua testa, ma per finta.» Indovini. Lui apre la mano: vuota. Apre l\'altra: vuota anche quella. «Hai perso», dice con dolcezza, e ti prende per il collo.</p>');
+    altro.appendChild(l);
+    document.getElementById('torna').onclick = () => Y.vai('S_Cenere.html');
+  }
+</script>
+</body>
+</html>

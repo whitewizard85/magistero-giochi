@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Corte di Útgarðr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .porte{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:22px 0}
+  .porte button{min-height:104px; display:flex; flex-direction:column; justify-content:center; border-left-width:4px}
+  .porte .sfida{font-family:"IM Fell English SC",serif; font-size:19px; color:var(--brina); line-height:1.15}
+  .porte .chi{font-size:14.5px; color:var(--ferro); margin-top:4px}
+  .porte .esito{font-size:14px; margin-top:6px; color:var(--aurora); font-weight:600}
+  .porte button.vinta{border-left-color:var(--aurora)}
+  .trono-porta{border-left-color:var(--brace) !important}
+  @media (max-width:360px){ .porte{grid-template-columns:1fr} }
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Austri · oltre il fiume</p>
+    <h1>La Corte di Útgarðr</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>La fortezza è così alta che devi piegare la testa all'indietro per vederne la cima, e anche così non sei sicuro di vederla davvero. Il portone è aperto, le sbarre sono larghe abbastanza da lasciarti passare di fianco. Dentro c'è un cortile lastricato e intorno, sedute su panche lunghe come navi, decine di giganti che si voltano a guardarti.</p>
+    <p>In fondo, su un trono di pietra, siede il loro re. Ha un sorriso sottile e gli occhi di chi sa qualcosa che tu non sai. «Qui non si resta senza saper fare qualcosa meglio di tutti», dice. «Ho quattro sale e quattro sfide. Vincile, nell'ordine che preferisci, e ti riceverò sul mio trono.»</p>
+  </div>
+
+  <div class="avviso">Un gigante seduto sulla panca più vicina si china verso di te e bisbiglia, con un fiato che sa di birra: «Qualunque cosa ti dicano, non lottare con la vecchia Elli. Nessuno l'ha mai battuta. Nessuno. Neanche il più forte degli dèi.»</div>
+  <div class="porte" id="porte"></div>
+  <div class="scelte" id="altro"></div>
+  <div class="scelte indietro"><button id="torna">Torna sulla riva del fiume</button></div>
+</main>
+<script>
+  const SALE = [
+    { g: 'logi',  pag: 'E_Logi.html',  sfida: 'La sfida del banchetto', chi: 'contro Logi, il cuoco' },
+    { g: 'hugi',  pag: 'E_Hugi.html',  sfida: 'La sfida della corsa',   chi: 'contro Hugi, il ragazzo veloce' },
+    { g: 'corno', pag: 'E_Corno.html', sfida: 'La sfida del corno',     chi: 'bere fino in fondo' },
+    { g: 'gatto', pag: 'E_Gatto.html', sfida: 'La sfida del gatto',     chi: 'sollevare il gatto del re' }
+  ];
+  if (Y.stanza({ richiede: () => Y.fatto('fiume') })) {
+    const box = document.getElementById('porte');
+    SALE.forEach(s => {
+      const b = document.createElement('button'); const v = Y.risolto(s.g);
+      if (v) b.classList.add('vinta');
+      b.innerHTML = `<span class="sfida">${s.sfida}</span><span class="chi">${s.chi}</span>${v ? '<span class="esito">✓ vinta</span>' : ''}`;
+      b.onclick = () => Y.vai(s.pag); box.appendChild(b);
+    });
+    const vinte = SALE.filter(s => Y.risolto(s.g)).length;
+    const altro = document.getElementById('altro');
+    const t = document.createElement('button'); t.className = 'trono-porta';
+    if (vinte === 4) {
+      t.textContent = 'Avvicinati al trono del re';
+      t.onclick = () => Y.vai('E_Trono.html');
+    } else {
+      t.innerHTML = `Avvicinati al trono del re <span class="nota">(sfide vinte: ${vinte} su 4)</span>`;
+      t.onclick = () => Y.popup('', `<p>Il re alza una mano senza smettere di sorridere. «Prima le sfide», dice. «Ne hai vinte ${vinte}. Ne voglio quattro.»</p>`);
+    }
+    altro.appendChild(t);
+    const e = document.createElement('button'); e.className = 'pericolo';
+    e.textContent = 'Accetta la sfida della vecchia nutrice: lottare con lei';
+    e.onclick = () => Y.trappola('elli', 'La presa di Elli',
+      '<p>È una vecchia piccola e curva, con le mani macchiate e un sorriso senza denti. Ti prende per i polsi con una delicatezza quasi gentile. Più tiri, più lei resta ferma; più spingi, più ti senti stanco, poi pesante, poi lento come se fossero passati cent\'anni. Ti ritrovi in ginocchio sulle lastre del cortile, e i giganti applaudono.</p>');
+    altro.appendChild(e);
+    document.getElementById('torna').onclick = () => Y.vai('E_Fiume.html');
+  }
+</script>
+</body>
+</html>

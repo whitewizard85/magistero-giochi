@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Sala del Giudizio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .indizi{counter-reset:ind; list-style:none; padding:0; margin:12px 0}
+  .indizi li{counter-increment:ind; position:relative; padding:8px 10px 8px 40px; margin-bottom:6px; background:var(--ardesia-2); border-radius:6px; cursor:pointer}
+  .indizi li::before{content:counter(ind); position:absolute; left:10px; top:8px; width:22px; height:22px; border-radius:50%; background:#FFC24D; color:#221714; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center}
+  .indizi li.usato{opacity:.55; text-decoration:line-through}
+  .griglia-l{width:100%; border-collapse:collapse; margin:10px 0; font-size:15px}
+  .griglia-l th{font-weight:600; color:var(--ferro); font-size:13.5px; padding:4px 2px}
+  .griglia-l td{border:1px solid var(--ardesia-3); text-align:center; padding:0}
+  .griglia-l td.nome{text-align:left; padding:6px 8px; color:var(--brina); font-size:14.5px; border-left:none}
+  #griglia{table-layout:fixed}
+  #griglia col.c-nome{width:31%}
+  #griglia td.nome{font-size:13px; padding:6px 4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .griglia-l td button{width:100%; height:38px; padding:0 !important; border:0 !important; border-radius:0 !important; background:transparent; text-align:center; font:700 17px "Spectral",serif; color:#FFFFFF}
+  .griglia-l td button.si{background:#5EE3C0; color:#221714}
+  .griglia-l td button.no{color:#B88A78}
+  .griglia-l .sep{border-left:3px solid #FFFFFF}
+  .scroll-l{overflow-x:auto}
+  .esito-l{margin-top:14px; padding:14px; border:1px solid var(--brace); border-radius:6px; background:rgba(255,194,77,.08)}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Suðri · davanti agli dèi</p>
+    <h1>La Sala del Giudizio</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Gli dèi si sono riuniti per giudicare la scommessa: Odino con il suo unico occhio, Thor con la barba rossa, Freyr che sorride a tutti. Sei doni sono stati presentati, uno dopo l'altro, e ogni dio ne ha ricevuti due. Loki, in un angolo, fa finta di annoiarsi.</p>
+    <p>Ma lo scriba che doveva annotare tutto si è addormentato, e il registro è vuoto. «Senza registro non si giudica», dice Odino. Per fortuna i presenti ricordano qualcosa, ciascuno un pezzetto.</p>
+  </div>
+
+  <section class="gioco" id="g-giudizio">
+    <h2>Il giudizio degli dèi</h2>
+    <p class="regole">Ricostruisci il registro: in che ordine furono presentati i sei doni (dal primo al sesto) e a quale dio andò ciascuno. Ogni dio ricevette esattamente due doni. Ecco i ricordi dei presenti (puoi toccarli per spuntarli mentre li usi):</p>
+    <ol class="indizi" id="indizi"></ol>
+    <p class="regole"><strong>Per ragionare</strong> puoi usare la griglia: tocca una casella una volta per segnarla ✓ (vero), due volte ✕ (impossibile), tre per cancellarla. La griglia è solo un aiuto: la risposta va scritta nella tabella del registro qui sotto.</p>
+    <div class="scroll-l"><table class="griglia-l" id="griglia"></table></div>
+    <p class="nota" style="margin:2px 0 0">Colonne: 1°–6° = posizione nell'ordine; O = Odino, T = Thor, F = Freyr.</p>
+    <p class="regole" style="margin-top:16px"><strong>Il registro</strong></p>
+    <table class="griglia-l" id="registro"></table>
+    <div class="scelte" style="margin:10px 0 0"><button id="presenta">Consegna il registro a Odino</button></div>
+    <div id="esito"></div>
+  </section>
+
+  <div class="scelte indietro"><button id="torna">Torna nella bottega</button></div>
+</main>
+<script>
+  const DONI = [
+    { k: 'Skíðblaðnir', n: 'la nave Skíðblaðnir' }, { k: 'Gungnir', n: 'la lancia Gungnir' }, { k: 'Sif', n: 'i capelli d\'oro di Sif' },
+    { k: 'Gullinbursti', n: 'il cinghiale Gullinbursti' }, { k: 'Draupnir', n: 'l\'anello Draupnir' }, { k: 'Mjölnir', n: 'il martello Mjölnir' }
+  ];
+  const DEI = ['Odino', 'Thor', 'Freyr'];
+  const INDIZI = ["L'anello Draupnir fu presentato subito prima della lancia Gungnir.", "La nave Skíðblaðnir e il cinghiale Gullinbursti andarono allo stesso dio.", "La lancia Gungnir fu presentata subito prima della nave Skíðblaðnir.", "Fra i capelli d'oro di Sif e l'anello Draupnir fu presentato esattamente un altro dono.", "La lancia Gungnir fu presentata prima del martello Mjölnir.", "I due doni di Odino furono presentati uno subito dopo l'altro.", "Il dono presentato per quinto andò a Freyr."];
+  const H_REGISTRO = '1yj36qpjefg';
+  let aiuto = {}, reg = DONI.map(() => ({ p: '', d: '' })), usati = new Set();
+  function salva() { Y.S.scrivi('s_giudizio_stato', JSON.stringify({ aiuto, reg, usati: [...usati] })); }
+  function disegnaIndizi() {
+    document.getElementById('indizi').innerHTML = INDIZI.map((t, i) => `<li data-i="${i}" class="${usati.has(i) ? 'usato' : ''}">${t}</li>`).join('');
+    document.querySelectorAll('#indizi li').forEach(li => li.onclick = () => { const i = +li.dataset.i; usati.has(i) ? usati.delete(i) : usati.add(i); salva(); disegnaIndizi(); });
+  }
+  function disegnaGriglia() {
+    let h = '<colgroup><col class="c-nome">' + '<col>'.repeat(9) + '</colgroup><tr><th></th>' + [1,2,3,4,5,6].map((n, i) => `<th${i === 0 ? ' class="sep"' : ''}>${n}°</th>`).join('') + DEI.map((d, i) => `<th${i === 0 ? ' class="sep"' : ''} title="${d}">${d[0]}</th>`).join('') + '</tr>';
+    DONI.forEach((d, r) => {
+      h += `<tr><td class="nome">${d.k}</td>`;
+      [...[1,2,3,4,5,6].map(n => 'p' + n), ...DEI.map(x => 'd' + x)].forEach((c, i) => {
+        const v = aiuto[r + c] || 0;
+        h += `<td class="${i === 0 || i === 6 ? 'sep' : ''}"><button data-a="${r + c}" class="${v === 1 ? 'si' : v === 2 ? 'no' : ''}" aria-label="${d.k} ${c}">${v === 1 ? '✓' : v === 2 ? '✕' : ''}</button></td>`;
+      });
+      h += '</tr>';
+    });
+    const t = document.getElementById('griglia'); t.innerHTML = h;
+    t.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { const k = b.dataset.a; aiuto[k] = ((aiuto[k] || 0) + 1) % 3; if (!aiuto[k]) delete aiuto[k]; salva(); disegnaGriglia(); });
+  }
+  function disegnaRegistro() {
+    let h = '<tr><th style="text-align:left">Dono</th><th>Ordine</th><th>Dio</th></tr>';
+    DONI.forEach((d, r) => {
+      h += `<tr><td class="nome">${d.n}</td>
+        <td><select data-r="${r}" data-t="p" aria-label="ordine di ${d.k}"><option value="">—</option>${[1,2,3,4,5,6].map(n => `<option ${reg[r].p == n ? 'selected' : ''}>${n}</option>`).join('')}</select></td>
+        <td><select data-r="${r}" data-t="d" aria-label="dio di ${d.k}"><option value="">—</option>${DEI.map(x => `<option ${reg[r].d === x ? 'selected' : ''}>${x}</option>`).join('')}</select></td></tr>`;
+    });
+    const t = document.getElementById('registro'); t.innerHTML = h;
+    t.querySelectorAll('select').forEach(s => { s.style.cssText = 'font:inherit;font-size:16px;color:var(--brina);background:var(--fondo-campo);border:1px solid var(--ardesia-3);border-radius:4px;padding:6px;margin:4px'; s.onchange = () => { reg[+s.dataset.r][s.dataset.t] = s.value; salva(); }; });
+  }
+  function verita() {
+    document.getElementById('esito').innerHTML = `<div class="esito-l"><p>Odino legge il registro e annuisce. Poi gli dèi esaminano i doni uno per uno, a lungo, e alla fine Thor solleva il martello dal manico corto e lo fa roteare sopra la testa. Il giudizio è unanime: Mjölnir è il dono migliore di tutti, perché proteggerà gli dèi dai giganti.</p>
+      <p>Brokkr si avvicina a Loki con un coltello. «La testa è mia.» Loki sorride: «La testa sì. Ma il collo no: il collo non era nella scommessa.» Gli dèi ridono, Brokkr no. Alla fine si accontenta di cucirgli le labbra con una lesina, così che per un po' Loki non possa scommettere con nessuno.</p>
+      <p>Mentre la sala ride, Brokkr ti prende da parte. «Tu volevi andare a sud, no? Sempre dritto. Quando l'aria comincia a bruciare, ci sei.»</p></div>
+      <div class="scelte"><button id="sud">Prosegui verso sud, dove l'aria brucia</button></div>`;
+    document.getElementById('sud').onclick = () => Y.vai('S_Porte.html');
+  }
+  function presenta() {
+    if (Y.risolto('giudizio')) return;
+    if (reg.some(x => !x.p || !x.d)) return Y.popup('', '<p>Odino batte un dito sul registro. «Ci sono ancora spazi vuoti.»</p>');
+    const pos = reg.map(x => x.p);
+    if (new Set(pos).size !== 6) return Y.popup('', '<p>«Due doni presentati nello stesso momento?», chiede Odino, inarcando il sopracciglio dell\'occhio buono. «Ogni posizione va usata una volta sola.»</p>');
+    const conta = DEI.map(d => reg.filter(x => x.d === d).length);
+    if (conta.some(c => c !== 2)) return Y.popup('', '<p>Freyr conta sulle dita. «Ognuno di noi ha ricevuto due doni. Il registro non torna.»</p>');
+    const chiave = reg.map(x => x.p + x.d[0]).join('');
+    if (Y.verifica(chiave, H_REGISTRO)) {
+      Y.sigilla('giudizio', document.getElementById('g-giudizio'), 'Il registro è esatto.');
+      Y.segna('giudizio'); document.getElementById('presenta').hidden = true; verita();
+    } else {
+      Y.suono('no');
+      Y.popup('', '<p>Gli dèi si guardano fra loro. Thor si gratta la barba. «Non è andata così», dice Odino. «Qualcosa, in questo registro, non torna con quello che ricordano i presenti.» Loki, nel suo angolo, ridacchia.</p>');
+    }
+  }
+  if (Y.stanza({ richiede: () => ['mantice', 'draupnir', 'torce', 'braci'].every(Y.risolto) })) {
+    try { const st = JSON.parse(Y.S.leggi('s_giudizio_stato') || 'null'); if (st) { aiuto = st.aiuto || {}; reg = st.reg || reg; usati = new Set(st.usati || []); } } catch (e) {}
+    disegnaIndizi(); disegnaGriglia(); disegnaRegistro();
+    document.getElementById('presenta').onclick = presenta;
+    if (Y.risolto('giudizio')) { Y.sigilla('giudizio', document.getElementById('g-giudizio')); document.getElementById('presenta').hidden = true; verita(); }
+    document.getElementById('torna').onclick = () => Y.vai('S_Bottega.html');
+  }
+</script>
+</body>
+</html>

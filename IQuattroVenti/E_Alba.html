@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Le Mura dell'Alba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .tavoletta{font-family:"Noto Sans Runic",sans-serif; font-size:40px; letter-spacing:.35em; color:var(--brina); text-align:center; margin:18px 0; padding:14px 0; border-top:1px solid var(--ardesia-3); border-bottom:1px solid var(--ardesia-3)}
+  table.codici{width:100%; border-collapse:collapse; margin:14px 0; font-size:16px}
+  table.codici td{padding:7px 4px; border-bottom:1px solid var(--ardesia-3); vertical-align:top}
+  table.codici td.codice{font-family:"Spectral",serif; font-weight:700; color:var(--brina); white-space:nowrap; text-align:right; letter-spacing:.06em}
+  .pergamena{margin-top:22px; padding:18px 16px; background:var(--fondo-gioco); border:1px solid var(--aurora); border-radius:6px}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Austri · l'ultimo passo</p>
+    <h1>Le Mura dell'Alba</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Cammini per tutta la notte attraverso la pianura vuota, finché il terreno non sale e finisce contro un muro di pietra bianca, così lungo che non se ne vede la fine né a destra né a sinistra. È il bordo orientale del mondo. Sopra il muro, il cielo è già color latte.</p>
+    <p>Seduto sul muro, con le gambe che penzolano dalla parte del vuoto, c'è un nano dalla barba rossiccia. Sulle spalle regge un angolo di cielo, e dove la sua schiena tocca il cielo, il cielo si accende.</p>
+    <p>«Austri», si presenta, senza voltarsi. «Ho visto tutto, da quassù: il fiume, le sale, il re che inganna e si fa ingannare. Hai inciso sei rune. Leggimele, e dimmi che cosa nasce qui, da questa parte del mondo, ogni mattina.»</p>
+  </div>
+  <div class="tavoletta" id="tavoletta"></div>
+  <p class="nota">Ricorda: sotto il nome di ogni luogo che hai attraversato, le stesse lettere sono scritte in rune.</p>
+  <div id="domanda">
+    <p><input type="text" id="risposta" maxlength="20" placeholder="Ciò che nasce a oriente" autocomplete="off"></p>
+    <div class="scelte" style="margin:10px 0 0"><button id="rispondi">Rispondi ad Austri</button></div>
+  </div>
+  <div class="pergamena" id="pergamena" hidden></div>
+  <div class="scelte indietro"><button id="radici">Torna alle radici del frassino</button></div>
+</main>
+<script>
+  const H_PAROLA = 'u6r3e4q9l6';
+  function finale() {
+    document.getElementById('domanda').hidden = true;
+    const righe = Y.ORDINE.map(g => `<tr><td>${Y.GIOCHI[g].nome}<br><span class="nota">${Y.GIOCHI[g].stanza}</span></td><td class="codice">${Y.codice(g)}</td></tr>`).join('');
+    const cadute = parseInt(Y.S.leggi('e_cadute') || '0', 10) || 0;
+    const p = document.getElementById('pergamena'); p.hidden = false;
+    p.innerHTML = `<p>«Aurora», dice Austri, e proprio mentre lo dice il sole spunta oltre il muro e ti colpisce in faccia. Il nano ride. «Tutte le mattine, da quando il mondo è mondo. E tutte le mattine mi sembra la prima volta. Vai, ${Y.nome()}. Il prossimo vento viene da sud, e scotta.»</p>
+      <p><strong>${Y.nome()}</strong> · ${Y.casa()}<br><span class="nota">Parola della via: AURORA · Risvegli nella casa di Gríðr: ${cadute}</span></p>
+      <table class="codici">${righe}</table>
+      <p>Invia alla <strong>Voce del Magistero</strong>, in privato, la parola della via e i sei codici (va bene anche uno screenshot di questa pagina). Poi commenta «fatto» sotto il post del Labirinto.</p>
+      <p class="nota">I codici dipendono dal nome con cui hai iniziato: non cambiarlo.</p>`;
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('trono') })) {
+    document.getElementById('tavoletta').textContent = Y.ORDINE.filter(Y.risolto).map(g => Y.GIOCHI[g].runa).join('');
+    if (Y.fatto('fine')) finale();
+    document.getElementById('rispondi').onclick = () => {
+      const r = document.getElementById('risposta').value;
+      if (Y.verifica(r, H_PAROLA)) { Y.segna('fine'); Y.suono('ok'); finale(); }
+      else { Y.suono('no'); Y.popup('', '<p>Austri scuote la testa, e un po\' di luce gli cade dalla barba. «No. Guarda meglio le tue rune.»</p>'); }
+    };
+    document.getElementById('radici').onclick = () => Y.vai('Radici.html');
+  }
+</script>
+</body>
+</html>

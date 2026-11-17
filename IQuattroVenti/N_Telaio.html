@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Stanza del Telaio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .telaio{position:relative; max-width:400px; margin:18px auto 8px; touch-action:none; user-select:none; -webkit-user-select:none}
+  .ordito{display:grid; grid-template-columns:repeat(7,1fr); gap:0; background:#0E151B; border:2px solid #5A4630; border-radius:4px;
+    background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 14.2857%), repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 1px,transparent 1px 14.2857%)}
+  .ordito div{aspect-ratio:1; position:relative}
+  .ordito div.fill{opacity:1}
+  .telaio svg{position:absolute; inset:2px; width:calc(100% - 4px); height:calc(100% - 4px); pointer-events:none}
+  .capo{position:absolute; inset:18%; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:"Noto Sans Runic",sans-serif; font-size:clamp(12px,3.6vw,17px); color:#0E151B; box-shadow:0 0 0 2px rgba(0,0,0,.35); z-index:2}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · dietro la tenda</p>
+    <h1>La Stanza del Telaio</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Dietro la tenda c'è una stanzetta senza finestre, con un grande telaio verticale appoggiato alla parete. L'ordito è teso, ma la tela non c'è: solo otto gomitoli di lana tinta, ciascuno legato a due chiodi diversi della cornice. Pesi di pietra pendono in basso e tintinnano appena.</p>
+    <p>La völva ti ha seguito senza far rumore. «Il passo del vento uccide chi lo attraversa con lana qualsiasi», dice. «Tessimelo tu, il mantello.»</p>
+  </div>
+
+  <section class="gioco" id="g-telaio">
+    <h2>Il telaio della völva</h2>
+    <p class="regole">Ogni colore deve unire i suoi due nodi con un unico filo che va solo in orizzontale e in verticale. I fili non si incrociano e non si sovrappongono, e alla fine non deve restare nessuna casella dell'ordito vuota. Trascina il dito da un nodo per tendere il filo; ripassa all'indietro per scioglierlo; tocca un filo a metà per accorciarlo da lì.</p>
+    <div class="telaio" id="telaio"><div class="ordito" id="ordito"></div><svg id="fili" viewBox="0 0 7 7" preserveAspectRatio="none"></svg></div>
+    <p class="nota" id="statoT" style="text-align:center">Fili completi: 0 su 8 · caselle coperte: 0 su 49</p>
+    <div class="scelte" style="margin:8px 0 0"><button id="disfaT" class="piccolo">Disfa tutta la tela</button></div>
+  </section>
+
+  <div class="scelte" id="premio" hidden><button class="oggetto" id="prendiMantello">Stacca la tela dal telaio</button></div>
+  <div class="scelte indietro"><button id="torna">Torna nella capanna</button></div>
+</main>
+<script>
+  const N = 7;
+  const CAPI = [[[3,3],[5,5]],[[4,5],[2,6]],[[3,6],[4,3]],[[4,2],[5,0]],[[5,1],[0,2]],[[0,3],[1,6]],[[1,5],[3,1]],[[3,2],[2,4]]];
+  const COLORI = ['#D4A24C','#C2645A','#7FB8A4','#6E8FD1','#B07CC6','#E3E1D6','#8BAA4E','#E07FA6'];
+  const SIMBOLI = ['ᚠ','ᚢ','ᚦ','ᚨ','ᚱ','ᚲ','ᚷ','ᚹ'];
+  const capoDi = {}; CAPI.forEach((c, k) => c.forEach(p => capoDi[p.join(',')] = k));
+  let fili = CAPI.map(() => []); // per colore: lista di "x,y"
+  let attivo = null;
+  const ordito = document.getElementById('ordito'), svg = document.getElementById('fili');
+  const celle = [];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const d = document.createElement('div'); d.dataset.c = x + ',' + y;
+    const k = capoDi[x + ',' + y];
+    if (k !== undefined) d.innerHTML = `<span class="capo" style="background:${COLORI[k]}">${SIMBOLI[k]}</span>`;
+    ordito.appendChild(d); celle.push(d);
+  }
+  const adiacenti = (a, b) => { const [ax, ay] = a.split(',').map(Number), [bx, by] = b.split(',').map(Number); return Math.abs(ax - bx) + Math.abs(ay - by) === 1; };
+  const completo = (k) => { const f = fili[k]; if (f.length < 2) return false; const e = CAPI[k].map(p => p.join(',')); return e.includes(f[0]) && e.includes(f[f.length - 1]) && f[0] !== f[f.length - 1]; };
+  const proprietario = (c) => fili.findIndex(f => f.includes(c));
+  function taglia(k, c) { const i = fili[k].indexOf(c); if (i >= 0) fili[k] = fili[k].slice(0, i); }
+
+  function disegna() {
+    celle.forEach(d => { const k = proprietario(d.dataset.c); d.style.background = k >= 0 ? COLORI[k] + '33' : ''; });
+    svg.innerHTML = fili.map((f, k) => f.length > 1 ? `<polyline points="${f.map(c => c.split(',').map(v => +v + .5).join(',')).join(' ')}" fill="none" stroke="${COLORI[k]}" stroke-width="${completo(k) ? .34 : .26}" stroke-linecap="round" stroke-linejoin="round" vector-effect="none"/>` : '').join('');
+    const fatti = fili.filter((_, k) => completo(k)).length;
+    const coperte = new Set(fili.flat()).size;
+    document.getElementById('statoT').textContent = `Fili completi: ${fatti} su 8 · caselle coperte: ${coperte} su 49`;
+    return fatti === 8 && coperte === 49;
+  }
+  function salva() { Y.S.scrivi('n_telaio_fili', JSON.stringify(fili)); }
+
+  function inizio(c) {
+    if (Y.risolto('telaio')) return;
+    const k = capoDi[c];
+    if (k !== undefined) {
+      if (fili[k].length && fili[k][fili[k].length - 1] === c && !completo(k)) { attivo = k; return; }
+      fili[k] = [c]; attivo = k;
+    } else {
+      const p = proprietario(c); if (p < 0) return;
+      fili[p] = fili[p].slice(0, fili[p].indexOf(c) + 1); attivo = p;
+    }
+    disegna();
+  }
+  function estendi(c) {
+    if (attivo === null) return;
+    const f = fili[attivo]; const testa = f[f.length - 1];
+    if (c === testa) return;
+    if (f.length > 1 && c === f[f.length - 2]) { f.pop(); disegna(); return; }
+    if (!adiacenti(testa, c)) return;
+    if (completo(attivo)) return;
+    const k = capoDi[c];
+    if (k !== undefined && k !== attivo) return;
+    if (k === attivo && c === f[0]) return;
+    if (f.includes(c)) { fili[attivo] = f.slice(0, f.indexOf(c) + 1); disegna(); return; }
+    const p = proprietario(c);
+    if (p >= 0 && p !== attivo) taglia(p, c);
+    f.push(c); Y.suono('clic');
+    disegna();
+  }
+  function fine() {
+    if (attivo === null) return; attivo = null; salva();
+    if (disegna()) vinto();
+  }
+  function vinto() {
+    Y.sigilla('telaio', document.getElementById('g-telaio'), 'Gli otto fili coprono tutto l\'ordito.');
+    if (!Y.ha('mantello')) document.getElementById('premio').hidden = false;
+  }
+  const cellaDa = (e) => { const el = document.elementFromPoint(e.clientX, e.clientY); const d = el && el.closest('[data-c]'); return d ? d.dataset.c : null; };
+
+  if (Y.stanza({ richiede: () => Y.fatto('nokk') })) {
+    const st = JSON.parse(Y.S.leggi('n_telaio_fili') || 'null'); if (st && st.length === 8) fili = st;
+    const t = document.getElementById('telaio');
+    t.addEventListener('pointerdown', (e) => { const c = cellaDa(e); if (c) { e.preventDefault(); inizio(c); } });
+    window.addEventListener('pointermove', (e) => { if (attivo !== null) { const c = cellaDa(e); if (c) estendi(c); } });
+    window.addEventListener('pointerup', fine);
+    window.addEventListener('pointercancel', fine);
+    if (disegna()) vinto();
+    document.getElementById('disfaT').onclick = () => { if (Y.risolto('telaio')) return; fili = CAPI.map(() => []); salva(); disegna(); };
+    document.getElementById('prendiMantello').onclick = async () => {
+      Y.prendi('mantello'); Y.suono('premio'); document.getElementById('premio').hidden = true;
+      await Y.popup('Il mantello di vaðmál', '<p>La völva taglia i fili con un coltellino d\'osso e la tela ti cade fra le mani: pesante, ruvida, calda come un animale. «Vaðmál», dice. «La lana con cui da noi si pagano i debiti. Questo, però, te lo regalo.»</p>', [{ testo: 'Lo metti nella bisaccia' }], 'premio');
+    };
+    document.getElementById('torna').onclick = () => Y.vai('N_Capanna.html');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Collina di Lyfja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Suðri · infermeria</p>
+    <h1>La Collina di Lyfja</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Ti svegli sul prato di una collina fresca, l'unico posto verde in tutto il sud. Le storie dicono che chi sale fin quassù, per quanto malato o ferito, guarisce. Accanto a te è seduta una donna dai capelli chiari che intreccia fili d'erba: Menglöð, la signora della collina.</p>
+  </div>
+  <p id="cura"></p>
+  <p id="conta" class="nota"></p>
+  <div class="avviso" id="consiglio"></div>
+  <p class="nota">Non hai perso nulla: le prove superate e le rune incise sono ancora tue.</p>
+  <div class="scelte"><button id="torna">Alzati e torna dove eri</button></div>
+</main>
+<script>
+  const CURE = {
+    cenere:   ['Ti posa i piedi in un ruscello così freddo che fa male. «Sulla piana si cammina guardando le pietre, non l\'orizzonte», dice.', 'Le pietre fredde sanno contare. Ascoltale.'],
+    loki:     ['Hai il segno di due dita sul collo. Menglöð ride piano. «Ti ha fatto il trucco della moneta, vero? Lo fa con tutti.»', 'Con Loki non si scommette. Nemmeno per finta.'],
+    mosca:    ['Ti fascia la mano con foglie di piantaggine. «Una mosca con gli occhi verdi», ripete, scuotendo la testa. «Non era una mosca.»', 'Qualunque cosa faccia la mosca, tu continua a pompare.'],
+    anello:   ['Ti sfila dal dito, uno alla volta, quattro anelli che non ricordi di aver messo. «L\'oro dei nani non si indossa finché non ha finito di nascere», dice.', 'Prima si incide l\'anello, poi lo si guarda. Al dito, mai.'],
+    galleria: ['Ti pulisce la faccia dalla fuliggine con un panno bagnato, e ride delle tue sopracciglia. «Ricresceranno», promette.', 'In miniera solo torce, e solo dove servono.'],
+    braci:    ['Ti spalma sul viso un unguento che profuma di menta. «Le braci si spostano con la pinza», dice. «Il fiato serve per altre cose.»', 'Una brace salta sopra un\'altra. Mai soffiarci sopra.']
+  };
+  if (Y.stanza({ tipo: 'via' })) {
+    const id = Y.S.leggi('s_trappola') || '';
+    const c = CURE[id] || ['Menglöð ti rimette in piedi senza farti domande.', 'Guarda bene prima di agire.'];
+    document.getElementById('cura').textContent = c[0];
+    document.getElementById('consiglio').textContent = '«' + c[1] + '»';
+    const n = parseInt(Y.S.leggi('s_cadute') || '0', 10) || 0;
+    document.getElementById('conta').textContent = n === 1
+      ? '«È la prima volta che sali sulla mia collina. Che sia anche l\'ultima.»'
+      : `«È la ${n}ª volta che ti ritrovo qui, ${Y.nome().split(' ')[0]}.»`;
+    if (Y.S.leggi('s_infermeria') !== '1') document.getElementById('torna').textContent = 'Torna sul sentiero';
+    document.getElementById('torna').onclick = () => {
+      const r = Y.S.leggi('s_ritorno') || Y.S.leggi('s_stanza') || 'S_Cenere.html';
+      Y.S.togli('s_infermeria');
+      Y.vai(r);
+    };
+    history.pushState(null, '', location.href);
+    window.addEventListener('popstate', () => history.pushState(null, '', location.href));
+  }
+</script>
+</body>
+</html>

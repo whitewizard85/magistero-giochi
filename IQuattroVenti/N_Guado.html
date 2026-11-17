@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Il Guado del Nøkk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · a nord</p>
+    <h1>Il Guado del Nøkk</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga" id="saga">
+    <p>È l'unico fiume della distesa che non è gelato. L'acqua corre veloce e scura su un letto di pietre piatte, e sembra bassa: basterebbe saltare da una pietra all'altra. Sulla riva opposta, tra le betulle, sale il fumo di un camino.</p>
+    <p>Poi la senti. Una musica di violino, dolcissima, che viene dal centro del fiume. Ogni nota ti dice che l'acqua è bassa, che le pietre sono ferme, che dall'altra parte c'è un fuoco acceso solo per te.</p>
+  </div>
+  <div class="avviso" id="avviso">Su una pietra della riva qualcuno ha inciso, con mano tremante: «Il suonatore è il fiume stesso. Fallo tacere col ferro freddo, prima di mettere un piede in acqua.»</div>
+  <div class="scelte" id="scelte"></div>
+  <div class="scelte indietro"><button id="torna">Torna alla distesa</button></div>
+</main>
+<script>
+  if (Y.stanza({ richiede: () => Y.fatto('cancello') })) {
+    const box = document.getElementById('scelte');
+    function aggiorna() {
+      box.innerHTML = '';
+      const zitto = Y.fatto('nokk');
+      if (zitto) {
+        document.getElementById('avviso').textContent = 'Il fiume adesso è solo un fiume. Le pietre, viste senza musica, sono più distanti di quanto sembrassero: ma ci si arriva.';
+        const b = document.createElement('button'); b.textContent = 'Attraversa il guado verso il fumo del camino';
+        b.onclick = () => Y.vai('N_Capanna.html'); box.appendChild(b);
+        return;
+      }
+      if (Y.ha('ago')) {
+        const g = document.createElement('button'); g.className = 'oggetto';
+        g.textContent = 'Getta l\'ago di ferro freddo nel punto da cui viene la musica';
+        g.onclick = async () => {
+          Y.segna('nokk'); Y.suono('premio');
+          await Y.popup('Il violino si spezza', '<p>L\'ago entra nell\'acqua senza un suono. La musica si interrompe a metà di una nota, come una corda tagliata. Per un attimo, sotto la superficie, vedi due occhi chiari e una mano lunga che si ritira. Poi niente.</p>');
+          aggiorna();
+        };
+        box.appendChild(g);
+      }
+      const a = document.createElement('button'); a.className = 'pericolo';
+      a.textContent = 'Lasciati guidare dalla musica e attraversa';
+      a.onclick = () => Y.trappola('nokk', 'Il fondo sparisce',
+        '<p>La prima pietra è ferma. La seconda pure. Alla terza la musica cambia tono, e la pietra sotto il tuo piede non c\'è più. L\'acqua ti chiude sopra la testa. Il violino continua a suonare, ora vicinissimo, ora dentro le tue orecchie.</p>');
+      box.appendChild(a);
+    }
+    aggiorna();
+    document.getElementById('torna').onclick = () => Y.vai('N_Distesa.html');
+  }
+</script>
+</body>
+</html>

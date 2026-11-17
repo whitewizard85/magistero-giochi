@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Il Lago Ghiacciato</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .lago-wrap{position:relative; margin:18px auto 8px; max-width:380px}
+  .lago{display:grid; grid-template-columns:repeat(9,1fr); gap:2px; padding:6px; background:#0E151B; border:2px solid var(--ferro-scuro); border-radius:4px; touch-action:none; user-select:none}
+  .lago div{aspect-ratio:1; border-radius:2px; background:linear-gradient(135deg,#9FB6C4,#7E98A8); position:relative}
+  .lago .roccia{background:#3B4652; box-shadow:inset 0 -3px 0 rgba(0,0,0,.35)}
+  .lago .buco{background:radial-gradient(circle,#06101A 45%,#1E3A50 75%,#7E98A8 100%)}
+  .lago .scheggia::after{content:"ᛖ"; font-family:"Noto Sans Runic",sans-serif; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#1C2A36; font-size:clamp(14px,4vw,20px)}
+  .lago .tu{background:#EEF3F5 !important; box-shadow:0 0 0 2px var(--brace) inset}
+  .lago .tu::after{content:""}
+  .uscita{position:absolute; top:-12px; height:12px; background:var(--aurora); border-radius:3px 3px 0 0; opacity:.35}
+  .uscita.aperta{opacity:1}
+  .comandi{display:grid; grid-template-columns:repeat(3,64px); grid-template-rows:repeat(2,52px); gap:6px; justify-content:center; margin:14px 0}
+  .comandi button{text-align:center; padding:0; font-size:22px; border-left-width:1px}
+  .contatori{display:flex; justify-content:space-between; font-size:15px; color:var(--ferro); max-width:380px; margin:0 auto}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Norðri · a ovest</p>
+    <h1>Il Lago Ghiacciato</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Il sentiero finisce su una riva di ciottoli neri. Il lago davanti a te è gelato fino al fondo: sotto il ghiaccio, immobili, ci sono pesci, foglie, una spada spezzata. In alcuni punti il ghiaccio è stato rotto da qualcosa di pesante, e l'acqua nera ti guarda.</p>
+    <p>Sulla riva opposta, in alto a destra, c'è un varco tra le rocce. Accanto al varco, conficcato nel ghiaccio, luccica qualcosa di metallico.</p>
+  </div>
+
+  <section class="gioco" id="g-lago">
+    <h2>Il lago che non perdona</h2>
+    <p class="regole">Sul ghiaccio non si cammina: si scivola. Scegli una direzione e andrai avanti finché una roccia o la riva non ti fermano. Prima di uscire dal varco in alto devi raccogliere le tre schegge di runa incise nel ghiaccio: basta passarci sopra. Se scivoli in un buco l'acqua ti risputa sulla riva e ricominci la traversata.</p>
+    <div class="lago-wrap"><div class="uscita" id="uscita"></div><div class="lago" id="lago" aria-label="Il lago ghiacciato"></div></div>
+    <div class="contatori"><span id="mosse">Scivolate: 0</span><span id="schegge">Schegge: 0 / 3</span></div>
+    <div class="comandi">
+      <span></span><button data-d="U" aria-label="Su">▲</button><span></span>
+      <button data-d="L" aria-label="Sinistra">◀</button><button data-d="D" aria-label="Giù">▼</button><button data-d="R" aria-label="Destra">▶</button>
+    </div>
+    <p class="nota" style="text-align:center">Puoi usare anche le frecce della tastiera o scorrere il dito sul lago.</p>
+    <div class="scelte" style="margin:8px 0 0"><button id="daCapo" class="piccolo">Torna sulla riva e ricomincia</button></div>
+  </section>
+
+  <div class="scelte" id="premio" hidden>
+    <button class="oggetto" id="prendiAgo">Stacca l'oggetto di metallo dal ghiaccio</button>
+  </div>
+  <div class="scelte indietro">
+    <button id="bosco">Cammina lungo la sponda sud, verso le betulle</button>
+    <button id="torna">Torna alla distesa</button>
+  </div>
+</main>
+<script>
+  const MAPPA = [
+    '.....#...',
+    '...#.#..O',
+    'S.....#..',
+    '.O.#.#..*',
+    '........#',
+    '.....#...',
+    '..*......',
+    'O#...#...',
+    '....#.#*.'
+  ];
+  const W = 9, H = 9, USCITA_X = 8;
+  let pos, schegge, raccolte, mosse, occupato = false;
+  const lago = document.getElementById('lago');
+  const celle = [];
+  function inizia() {
+    schegge = []; raccolte = new Set(); mosse = 0;
+    MAPPA.forEach((r, y) => [...r].forEach((c, x) => {
+      if (c === 'S') pos = [x, y];
+      if (c === '*') schegge.push(x + ',' + y);
+    }));
+    disegna();
+  }
+  function disegna() {
+    if (!celle.length) for (let i = 0; i < W * H; i++) { const d = document.createElement('div'); lago.appendChild(d); celle.push(d); }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const c = MAPPA[y][x], d = celle[y * W + x];
+      d.className = c === '#' ? 'roccia' : c === 'O' ? 'buco' : (schegge.includes(x + ',' + y) && !raccolte.has(x + ',' + y) ? 'scheggia' : '');
+    }
+    celle[pos[1] * W + pos[0]].classList.add('tu');
+    document.getElementById('mosse').textContent = 'Scivolate: ' + mosse;
+    document.getElementById('schegge').textContent = `Schegge: ${raccolte.size} / 3`;
+    const u = document.getElementById('uscita');
+    u.style.left = `calc(6px + ${USCITA_X} * (100% - 12px + 2px) / 9)`;
+    u.style.width = `calc((100% - 12px - 16px) / 9)`;
+    u.classList.toggle('aperta', raccolte.size === 3);
+  }
+  const passo = (ms) => new Promise(r => setTimeout(r, ms));
+  async function scivola(d) {
+    if (occupato || Y.risolto('lago') && document.getElementById('g-lago').classList.contains('fermo')) return;
+    const [dx, dy] = { U: [0, -1], D: [0, 1], L: [-1, 0], R: [1, 0] }[d];
+    occupato = true; let [x, y] = pos; let mosso = false;
+    while (true) {
+      const nx = x + dx, ny = y + dy;
+      if (ny === -1 && nx === USCITA_X && raccolte.size === 3) { pos = [x, y]; disegna(); await vittoria(); occupato = false; return; }
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H || MAPPA[ny][nx] === '#') break;
+      x = nx; y = ny; mosso = true;
+      if (schegge.includes(x + ',' + y)) raccolte.add(x + ',' + y);
+      pos = [x, y]; disegna(); await passo(55);
+      if (MAPPA[y][x] === 'O') {
+        Y.suono('no'); mosse++;
+        await Y.popup('Splash', '<p>Il ghiaccio cede. L\'acqua è così fredda che per un istante non senti niente; poi una corrente ti spinge indietro, fino alla riva. Le schegge raccolte sono tornate al loro posto.</p>', [{ testo: 'Riprova la traversata' }]);
+        inizia(); occupato = false; return;
+      }
+    }
+    if (mosso) { mosse++; Y.suono('clic'); }
+    disegna(); occupato = false;
+  }
+  async function vittoria() {
+    document.getElementById('g-lago').classList.add('fermo');
+    Y.sigilla('lago', document.getElementById('g-lago'), `Hai attraversato il lago in ${mosse + 1} scivolate.`);
+    mostraPremio();
+  }
+  function mostraPremio() {
+    if (!Y.ha('ago')) document.getElementById('premio').hidden = false;
+  }
+
+  if (Y.stanza({ richiede: () => Y.fatto('cancello') })) {
+    inizia();
+    if (Y.risolto('lago')) { Y.sigilla('lago', document.getElementById('g-lago')); mostraPremio(); }
+    document.querySelectorAll('[data-d]').forEach(b => b.onclick = () => scivola(b.dataset.d));
+    document.addEventListener('keydown', (e) => {
+      const m = { ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R' }[e.key];
+      if (m && !document.querySelector('.velo')) { e.preventDefault(); scivola(m); }
+    });
+    let t0 = null;
+    lago.addEventListener('pointerdown', (e) => { t0 = [e.clientX, e.clientY]; });
+    lago.addEventListener('pointerup', (e) => {
+      if (!t0) return; const dx = e.clientX - t0[0], dy = e.clientY - t0[1]; t0 = null;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+      scivola(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'R' : 'L') : (dy > 0 ? 'D' : 'U'));
+    });
+    document.getElementById('daCapo').onclick = () => { if (!occupato) { document.getElementById('g-lago').classList.remove('fermo'); inizia(); } };
+    document.getElementById('prendiAgo').onclick = async () => {
+      Y.prendi('ago'); Y.suono('premio');
+      document.getElementById('premio').hidden = true;
+      await Y.popup('L\'ago di ferro freddo', '<p>È un ago lungo come un dito, di ferro grezzo, così freddo che brucia. Qualcuno l\'ha piantato qui di proposito, con la punta rivolta verso nord, verso il fiume.</p><p class="nota">Lo metti nella bisaccia.</p>', [{ testo: 'Continua' }], 'premio');
+    };
+    document.getElementById('torna').onclick = () => Y.vai('N_Distesa.html');
+    document.getElementById('bosco').onclick = () => Y.vai('N_Bosco.html');
+  }
+</script>
+</body>
+</html>

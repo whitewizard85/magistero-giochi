@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Pista di Hugi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .pietre{display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:360px; margin:18px auto 10px}
+  .pietra{aspect-ratio:1; border-radius:18px; border:3px solid rgba(255,255,255,.35) !important; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-family:"Noto Sans Runic",sans-serif; font-size:clamp(42px,13vw,64px); color:#11152B !important; text-align:center; padding:0 !important; transition:transform .08s, box-shadow .08s, filter .08s; box-shadow:inset 0 -6px 0 rgba(0,0,0,.25)}
+  .pietra small{font:600 14px "Spectral",serif; margin-top:2px}
+  .pietra.accesa{filter:brightness(1.18); transform:scale(1.07); box-shadow:0 0 0 4px #FFFFFF, 0 0 28px 6px rgba(255,255,255,.55); border-color:#FFFFFF !important}
+  .pietra:disabled{opacity:1; cursor:default}
+  .tabellone{display:flex; justify-content:space-between; align-items:center; max-width:360px; margin:0 auto; font-size:15.5px}
+  .pista{height:12px; background:var(--fondo-campo); border:1px solid var(--ardesia-3); border-radius:6px; max-width:360px; margin:10px auto; position:relative; overflow:hidden}
+  .pista span{position:absolute; top:0; bottom:0; left:0; background:var(--aurora); border-radius:6px; transition:width .3s}
+  .messaggio{text-align:center; font-size:17px; min-height:1.6em; color:var(--brina); font-weight:600}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Austri · la seconda sala</p>
+    <h1>La Pista di Hugi</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Non è una sala, è un campo: una pista d'erba ghiacciata che corre fuori dalle mura, così lunga che la fine si perde nella foschia. Sulla linea di partenza ti aspetta un ragazzo magro, con i capelli chiari e gli occhi che non stanno mai fermi. Si chiama Hugi. Nessuno l'ha mai visto arrivare secondo.</p>
+    <p>Lungo la pista ci sono quattro pietre incise. «Non si corre con le gambe, qui», dice Hugi, e ride. «Io tocco le pietre, tu ripeti. Se ti perdi anche un passo, sei rimasto indietro.»</p>
+  </div>
+  <div class="avviso">In fondo alla pista c'è una porta fatta di nebbia, e Hugi ogni tanto ci sparisce dentro. Un gigante borbotta: «Non seguirlo là. Lui ne esce. Tu no.»</div>
+
+  <section class="gioco" id="g-hugi">
+    <h2>La corsa contro Hugi</h2>
+    <p class="regole">Hugi illumina le pietre una alla volta, in un certo ordine; poi tocca a te toccarle nello stesso ordine. A ogni giro la sequenza si allunga di un passo e Hugi corre un po' più veloce. Arrivato a <strong>7 passi</strong>, Hugi si volta: l'ultima sequenza va ripetuta <strong>al contrario</strong>, dall'ultima pietra alla prima. Se sbagli, la corsa riparte dall'inizio. Ogni pietra ha il suo colore, la sua runa e il suo suono.</p>
+    <div class="tabellone"><span id="giro">Giro: —</span><span id="fase" class="nota"></span></div>
+    <div class="pista"><span id="avanzamento" style="width:0%"></span></div>
+    <div class="pietre" id="pietre"></div>
+    <p class="messaggio" id="messaggio">Premi «Al via!» quando sei pronto.</p>
+    <div class="scelte" style="margin:6px 0 0"><button id="via">Al via!</button></div>
+  </section>
+
+  <div class="scelte" id="trappola"></div>
+  <div class="scelte indietro"><button id="torna">Torna nel cortile</button></div>
+</main>
+<script>
+  const PIETRE = [
+    { runa: 'ᚠ', nome: 'ricchezza', colore: '#FFB547', nota: 330 },
+    { runa: 'ᛚ', nome: 'acqua',  colore: '#4FE3B2', nota: 392 },
+    { runa: 'ᛋ', nome: 'sole',   colore: '#F5E663', nota: 494 },
+    { runa: 'ᛗ', nome: 'uomo',   colore: '#8DB8FF', nota: 587 }
+  ];
+  const INIZIO = 3, ULTIMO = 7, ROVESCIO = 5;
+  let seq = [], attesa = [], turno = 'fermo', giro = 0, rovescio = false;
+  const box = document.getElementById('pietre'), msg = document.getElementById('messaggio');
+  let ctx = null;
+  function nota(f, d = .35) {
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
+      o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.14, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+      o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + d + .05);
+    } catch (e) {}
+  }
+  const bottoni = PIETRE.map((p, i) => {
+    const b = document.createElement('button'); b.className = 'pietra'; b.style.background = p.colore; b.dataset.i = i;
+    b.innerHTML = `${p.runa}<small>${p.nome}</small>`; b.setAttribute('aria-label', 'pietra ' + p.nome);
+    b.onclick = () => premi(i); box.appendChild(b); return b;
+  });
+  const pausa = (ms) => new Promise(r => setTimeout(r, ms));
+  async function accendi(i, ms) { bottoni[i].classList.add('accesa'); nota(PIETRE[i].nota); await pausa(ms); bottoni[i].classList.remove('accesa'); }
+  function aggiorna() {
+    document.getElementById('giro').textContent = giro ? `Passi da ripetere: ${seq.length}` : 'Giro: —';
+    document.getElementById('fase').textContent = rovescio ? 'al contrario!' : '';
+    const tot = (ULTIMO - INIZIO + 1) + 1, fatti = rovescio ? tot - 1 : Math.max(0, seq.length - INIZIO);
+    document.getElementById('avanzamento').style.width = (giro ? Math.round(100 * fatti / tot) : 0) + '%';
+  }
+  async function mostra() {
+    turno = 'hugi'; bottoni.forEach(b => b.disabled = true);
+    msg.textContent = rovescio ? 'Hugi si volta! Guarda bene: poi ripeti AL CONTRARIO.' : 'Guarda Hugi…';
+    aggiorna(); await pausa(rovescio ? 1400 : 700);
+    const ms = Math.max(380, 720 - (seq.length - INIZIO) * 50);
+    for (const i of seq) { await accendi(i, ms); await pausa(Math.round(ms * .45)); }
+    attesa = rovescio ? seq.slice().reverse() : seq.slice();
+    turno = 'tu'; bottoni.forEach(b => b.disabled = false);
+    msg.textContent = rovescio ? 'Ora tu, dall\'ultima alla prima.' : 'Ora tu.';
+  }
+  function nuovaCorsa() { giro = 1; rovescio = false; seq = []; for (let k = 0; k < INIZIO; k++) seq.push(Math.floor(Math.random() * 4)); mostra(); }
+  async function premi(i) {
+    if (turno !== 'tu') return;
+    accendi(i, 220);
+    if (i !== attesa[0]) {
+      turno = 'fermo'; bottoni.forEach(b => b.disabled = true); Y.suono('no');
+      msg.textContent = 'Passo sbagliato: Hugi è già lontano.';
+      await Y.popup('Rimasto indietro', `<p>Hugi è già al traguardo prima che tu abbia finito il passo. Si volta, non ha nemmeno il fiato corto. «Un'altra?», chiede.</p><p class="nota">La pietra giusta era «${PIETRE[attesa[0]].nome}».</p>`, [{ testo: 'Un\'altra corsa' }]);
+      nuovaCorsa(); return;
+    }
+    attesa.shift();
+    if (attesa.length) return;
+    turno = 'fermo'; bottoni.forEach(b => b.disabled = true);
+    if (rovescio) return vinto();
+    await pausa(500);
+    if (seq.length >= ULTIMO) {
+      rovescio = true; seq = []; for (let k = 0; k < ROVESCIO; k++) seq.push(Math.floor(Math.random() * 4));
+    } else seq.push(Math.floor(Math.random() * 4));
+    giro++; mostra();
+  }
+  function vinto() {
+    aggiorna(); document.getElementById('avanzamento').style.width = '100%';
+    msg.textContent = 'Arrivati insieme sul traguardo!';
+    Y.sigilla('hugi', document.getElementById('g-hugi'), 'Hai tenuto il passo di Hugi fino in fondo.');
+    document.getElementById('via').hidden = true; document.getElementById('trappola').innerHTML = '';
+    if (!Y.fatto('hugi_rivelato')) {
+      Y.segna('hugi_rivelato');
+      Y.popup('Testa a testa', '<p>Taglia il traguardo un istante prima di te, o forse nello stesso istante: nemmeno i giganti sugli spalti sono d\'accordo. Hugi ti stringe la mano. È fredda e leggerissima, come se non pesasse niente. «Nessuno mi era mai stato così vicino», dice.</p>');
+    }
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('fiume') })) {
+    bottoni.forEach(b => b.disabled = true);
+    if (Y.risolto('hugi')) { Y.sigilla('hugi', document.getElementById('g-hugi')); document.getElementById('via').hidden = true; msg.textContent = 'Hai già corso contro Hugi.'; }
+    else {
+      const t = document.createElement('button'); t.className = 'pericolo'; t.textContent = 'Corri dietro a Hugi, dentro la porta di nebbia';
+      t.onclick = () => Y.trappola('hugi', 'Dentro la nebbia',
+        '<p>Dall\'altra parte della porta non c\'è la pista: ci sono pensieri. I tuoi. Ti corrono intorno così in fretta che non riesci ad afferrarne nessuno: ricordi, domande, cose che dovevi fare e non hai fatto. Corri per ore dietro a un\'idea che non raggiungi mai, finché le gambe si piegano.</p>');
+      document.getElementById('trappola').appendChild(t);
+    }
+    document.getElementById('via').onclick = () => { if (turno === 'fermo') { document.getElementById('via').textContent = 'Ricomincia la corsa'; nuovaCorsa(); } };
+    document.getElementById('torna').onclick = () => Y.vai('E_Corte.html');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Le Porte di Muspelheim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .tavoletta{font-family:"Noto Sans Runic",sans-serif; font-size:40px; letter-spacing:.35em; color:var(--brina); text-align:center; margin:18px 0; padding:14px 0; border-top:1px solid var(--ardesia-3); border-bottom:1px solid var(--ardesia-3)}
+  table.codici{width:100%; border-collapse:collapse; margin:14px 0; font-size:16px}
+  table.codici td{padding:7px 4px; border-bottom:1px solid var(--ardesia-3); vertical-align:top}
+  table.codici td.codice{font-family:"Spectral",serif; font-weight:700; color:var(--brina); white-space:nowrap; text-align:right; letter-spacing:.06em}
+  .pergamena{margin-top:22px; padding:18px 16px; background:var(--fondo-gioco); border:1px solid var(--aurora); border-radius:6px}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Suðri · l'ultimo passo</p>
+    <h1>Le Porte di Muspelheim</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Più vai a sud, più il terreno diventa nero e lucido, come vetro fuso. L'aria brucia la gola. Davanti a te, oltre una distesa di rocce che fumano, si alza un muro di fiamme alto fino al cielo, e in mezzo al muro c'è una porta. Davanti alla porta siede un gigante enorme, scuro come il carbone, con una spada che splende più del sole: Surtr. Dorme, per fortuna. Per ora.</p>
+    <p>Su uno sperone di roccia, poco lontano, è seduto un nano con la barba bruciacchiata. Regge sulle spalle l'angolo meridionale del cielo, e dove la sua schiena tocca il cielo, il cielo è rosso.</p>
+    <p>«Suðri», dice, senza smettere di guardare il gigante che dorme. «Parla piano. Hai inciso sei rune: leggimele. E dimmi che cosa custodisce quella porta, la cosa da cui è nato questo mondo e da cui un giorno finirà.»</p>
+  </div>
+  <div class="tavoletta" id="tavoletta"></div>
+  <p class="nota">Ricorda: sotto il nome di ogni luogo che hai attraversato, le stesse lettere sono scritte in rune.</p>
+  <div id="domanda">
+    <p><input type="text" id="risposta" maxlength="20" placeholder="Ciò che arde a sud" autocomplete="off"></p>
+    <div class="scelte" style="margin:10px 0 0"><button id="rispondi">Rispondi a Suðri</button></div>
+  </div>
+  <div class="pergamena" id="pergamena" hidden></div>
+  <div class="scelte indietro"><button id="radici">Torna alle radici del frassino</button></div>
+</main>
+<script>
+  const H_PAROLA = '105u85dykt8';
+  function finale() {
+    document.getElementById('domanda').hidden = true;
+    const righe = Y.ORDINE.map(g => `<tr><td>${Y.GIOCHI[g].nome}<br><span class="nota">${Y.GIOCHI[g].stanza}</span></td><td class="codice">${Y.codice(g)}</td></tr>`).join('');
+    const cadute = parseInt(Y.S.leggi('s_cadute') || '0', 10) || 0;
+    const p = document.getElementById('pergamena'); p.hidden = false;
+    p.innerHTML = `<p>«Fiamma», sussurra Suðri, e le fiamme del muro, per un attimo, si piegano verso di lui come se lo avessero sentito. «Da qui è venuto il primo calore che ha sciolto il ghiaccio del nord, e da qui un giorno uscirà Surtr con la sua spada. Ma non oggi.» Ti fa segno di andare, piano, senza svegliarlo. «Vai, ${Y.nome()}. Manca un vento solo: quello dell'ovest, che porta il mare.»</p>
+      <p><strong>${Y.nome()}</strong> · ${Y.casa()}<br><span class="nota">Parola della via: FIAMMA · Risvegli sulla collina di Lyfja: ${cadute}</span></p>
+      <table class="codici">${righe}</table>
+      <p>Invia alla <strong>Voce del Magistero</strong>, in privato, la parola della via e i sei codici (va bene anche uno screenshot di questa pagina). Poi commenta «fatto» sotto il post del Labirinto.</p>
+      <p class="nota">I codici dipendono dal nome con cui hai iniziato: non cambiarlo.</p>`;
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('giudizio') })) {
+    document.getElementById('tavoletta').textContent = Y.ORDINE.filter(Y.risolto).map(g => Y.GIOCHI[g].runa).join('');
+    if (Y.fatto('fine')) finale();
+    document.getElementById('rispondi').onclick = () => {
+      const r = document.getElementById('risposta').value;
+      if (Y.verifica(r, H_PAROLA)) { Y.segna('fine'); Y.suono('ok'); finale(); }
+      else { Y.suono('no'); Y.popup('', '<p>Suðri scuote la testa, e una scintilla gli cade dalla barba. «No. Guarda meglio le tue rune.»</p>'); }
+    };
+    document.getElementById('radici').onclick = () => Y.vai('Radici.html');
+  }
+</script>
+</body>
+</html>

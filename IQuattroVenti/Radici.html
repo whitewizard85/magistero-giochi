@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Le Radici del Frassino</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .rosa{display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:auto auto auto; gap:10px; margin:6px 0 26px; align-items:stretch}
+  .rosa button{text-align:center; padding:14px 8px; border-left-width:1px; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:96px}
+  .rosa button .vento{font-family:"IM Fell English SC",serif; font-size:21px; color:var(--brina); line-height:1.1}
+  .rosa button .nano{font-size:13.5px; color:var(--ferro); font-style:italic; margin-top:4px}
+  .rosa button .stato{font-size:12.5px; margin-top:4px}
+  .rosa button.aperta{border-color:var(--aurora); background:rgba(127,184,165,.08)}
+  .rosa button.chiusa{opacity:.5}
+  .rosa .n{grid-column:2; grid-row:1} .rosa .o{grid-column:1; grid-row:2} .rosa .e{grid-column:3; grid-row:2} .rosa .s{grid-column:2; grid-row:3}
+  .rosa .centro{grid-column:2; grid-row:2; display:flex; align-items:center; justify-content:center; font-family:"Noto Sans Runic",sans-serif; font-size:34px; color:var(--ferro-scuro)}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo" id="saluto">Il crocevia</p>
+    <h1>Le Radici del Frassino</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="rosa" id="rosa">
+    <span class="centro" aria-hidden="true">ᛉ</span>
+  </div>
+  <div class="saga">
+    <p>Quattro gallerie partono da questa sala di terra e corteccia, una per ogni vento. Su ciascun arco è inciso il nome del nano che regge quell'angolo del cielo. Dove il vento soffia, l'arco è aperto; dove dorme, è pieno di brina immobile. Le vie già aperte restano percorribili: si può tornare a quelle lasciate a metà.</p>
+  </div>
+</main>
+<script>
+  if (Y.stanza({ tipo: 'neutra', immagine: false })) {
+    document.querySelector('.saga').insertAdjacentHTML('beforebegin', Y.immagine('Radici'));
+    document.getElementById('saluto').textContent = `${Y.nome()} · ${Y.casa()}`;
+    const rosa = document.getElementById('rosa');
+    const POSTO = { nord: 'n', ovest: 'o', est: 'e', sud: 's' };
+    const NANO = { nord: 'Norðri', est: 'Austri', sud: 'Suðri', ovest: 'Vestri' };
+    for (const [k, v] of Object.entries(Y.VIE)) {
+      const b = document.createElement('button');
+      const pre = { nord: 'n', est: 'e', sud: 's', ovest: 'o' }[k];
+      const finita = Y.S.leggi(pre + '_fine') === '1';
+      b.className = POSTO[k] + (v.aperta ? ' aperta' : ' chiusa');
+      b.innerHTML = `<span class="vento">${v.vento}</span><span class="nano">${NANO[k]}</span>`
+        + (finita ? '<span class="stato ok">percorsa</span>' : (v.aperta ? '' : '<span class="stato">dorme</span>'));
+      b.setAttribute('aria-label', `${v.nome}${v.aperta ? '' : ', chiusa'}`);
+      if (!v.aperta) b.onclick = () => Y.popup(v.nome, `<p>${v.avviso}</p>`);
+      else b.onclick = () => Y.vai(Y.S.leggi(pre + '_infermeria') === '1' ? Y.DATI[pre].infermeria : (Y.S.leggi(pre + '_stanza') || v.pagina));
+      rosa.appendChild(b);
+    }
+  }
+</script>
+</body>
+</html>

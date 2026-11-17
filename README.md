@@ -1,3 +1,5 @@
 # Giochi del Magistero
-Ogni gioco del mercoledì sta in una sua cartella (es. `Schedario/`).
-Link da usare nei post: `https://<utente>.github.io/magistero-giochi/<Cartella>/`
+- `Schedario/` — Lo Schedario di Quirke (gioco del mercoledì)
+- `IQuattroVenti/` — I Quattro Venti di Yggdrasil, labirinto di novembre (inizio: `Benvenuto.html`)
+
+Link: `https://whitewizard85.github.io/magistero-giochi/<Cartella>/`

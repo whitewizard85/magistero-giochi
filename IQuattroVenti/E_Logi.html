@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Sala del Banchetto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .tavola-b{display:grid; grid-template-columns:repeat(8,1fr); max-width:420px; margin:16px auto 8px; border:3px solid #E8ECFA; border-radius:4px; touch-action:none; user-select:none; -webkit-user-select:none; background:#2A2F4F}
+  .tavola-b div{aspect-ratio:1; display:flex; align-items:center; justify-content:center; font:700 clamp(15px,4.6vw,21px) "Spectral",serif; color:#FFFFFF;
+    border:1px solid rgba(232,236,250,.18); box-sizing:border-box}
+  .tavola-b div.anteprima{background:rgba(255,181,71,.45) !important}
+  .tavola-b div.pieno{color:#11152B}
+  .tavola-b div.sbagliato{background:repeating-linear-gradient(45deg,#5A607F 0 6px,#4A4F6C 6px 12px) !important; color:#FFFFFF}
+  .legenda-b{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; font-size:14.5px; color:var(--ferro)}
+  .legenda-b i{display:inline-block; width:14px; height:14px; vertical-align:-2px; margin-right:5px; border-radius:2px}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Austri · la prima sala</p>
+    <h1>La Sala del Banchetto</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>La sala è piena di fumo e di odore di carne arrosto. Lungo il centro corre un tavolo enorme, diviso in sessantaquattro riquadri come una scacchiera, e in fondo, accanto a un trogolo colmo che fuma, aspetta il tuo avversario: un uomo alto, magro, dai capelli rossi che si muovono anche senza vento. Si chiama Logi. Ha sempre fame.</p>
+    <p>«La gara è semplice», dice il re dalla porta. «Chi divide il banchetto più in fretta, mangia per primo. Logi ha già finito, naturalmente. Tocca a te.»</p>
+  </div>
+  <div class="avviso">Sul bordo del trogolo qualcuno ha inciso: «Questo è il piatto di Logi. Chi ci mette le mani, se le brucia.»</div>
+
+  <section class="gioco" id="g-logi">
+    <h2>Il banchetto di Logi</h2>
+    <p class="regole">Dividi tutto il tavolo in porzioni rettangolari (anche quadrate). Ogni porzione deve contenere un solo numero, e quel numero dice quanti riquadri occupa la porzione. Non devono restare riquadri vuoti.</p>
+    <p class="regole"><strong>Come si gioca:</strong> trascina il dito da un angolo all'angolo opposto della porzione. Le porzioni giuste si colorano; quelle sbagliate restano a righe grigie. Tocca una porzione per toglierla.</p>
+    <div class="tavola-b" id="tavola"></div>
+    <div class="legenda-b"><span><i style="background:#FFB547"></i>porzione giusta</span><span><i style="background:repeating-linear-gradient(45deg,#5A607F 0 3px,#4A4F6C 3px 6px)"></i>porzione sbagliata</span></div>
+    <p class="nota" id="statoL" style="text-align:center">Porzioni giuste: 0 su 13 · riquadri coperti: 0 su 64</p>
+    <div class="scelte" style="margin:8px 0 0"><button id="daCapoL" class="piccolo">Sparecchia tutto</button></div>
+  </section>
+
+  <div class="scelte" id="trappola"></div>
+  <div class="scelte indietro"><button id="torna">Torna nel cortile</button></div>
+</main>
+<script>
+  const W = 8, H = 8;
+  const INDIZI = [[0,1,3],[1,1,9],[7,0,4],[6,1,6],[7,2,3],[1,4,6],[2,4,8],[5,4,8],[6,3,4],[7,7,4],[1,6,2],[1,7,5],[6,7,2]];
+  const COLORI = ['#FFB547','#4FE3B2','#8DB8FF','#FF9E8F','#D3A8FF','#F5E663','#6FDCEB','#F9B8D8'];
+  const numero = {}; INDIZI.forEach(([x, y, n]) => numero[x + ',' + y] = n);
+  let porzioni = []; // [x0,y0,w,h]
+  let inizio = null, attuale = null;
+  const tav = document.getElementById('tavola'), celle = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const d = document.createElement('div'); d.dataset.c = x + ',' + y; d.textContent = numero[x + ',' + y] || '';
+    tav.appendChild(d); celle.push(d);
+  }
+  const dentro = (r, x, y) => x >= r[0] && x < r[0] + r[2] && y >= r[1] && y < r[1] + r[3];
+  const giusta = (r) => { const ns = INDIZI.filter(([x, y]) => dentro(r, x, y)); return ns.length === 1 && ns[0][2] === r[2] * r[3]; };
+  const rett = (a, b) => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.abs(a[0] - b[0]) + 1, Math.abs(a[1] - b[1]) + 1];
+  function disegna() {
+    const prop = {};
+    porzioni.forEach((r, i) => { for (let y = r[1]; y < r[1] + r[3]; y++) for (let x = r[0]; x < r[0] + r[2]; x++) prop[x + ',' + y] = i; });
+    const ant = inizio && attuale ? rett(inizio, attuale) : null;
+    let ok = 0;
+    porzioni.forEach(r => { if (giusta(r)) ok++; });
+    celle.forEach(d => {
+      const [x, y] = d.dataset.c.split(',').map(Number), i = prop[d.dataset.c];
+      d.className = ''; d.style.background = ''; d.style.borderTop = d.style.borderLeft = d.style.borderRight = d.style.borderBottom = '';
+      if (i !== undefined) {
+        const r = porzioni[i];
+        if (giusta(r)) { d.style.background = COLORI[i % COLORI.length]; d.classList.add('pieno'); } else d.classList.add('sbagliato');
+        const forte = '3px solid #11152B';
+        if (y === r[1]) d.style.borderTop = forte;
+        if (y === r[1] + r[3] - 1) d.style.borderBottom = forte;
+        if (x === r[0]) d.style.borderLeft = forte;
+        if (x === r[0] + r[2] - 1) d.style.borderRight = forte;
+      }
+      if (ant && dentro(ant, x, y)) d.classList.add('anteprima');
+    });
+    const coperte = Object.keys(prop).length;
+    document.getElementById('statoL').textContent = `Porzioni giuste: ${ok} su ${INDIZI.length} · riquadri coperti: ${coperte} su ${W * H}`;
+    return ok === INDIZI.length && coperte === W * H && porzioni.length === INDIZI.length;
+  }
+  const cellaDa = (e) => { const el = document.elementFromPoint(e.clientX, e.clientY); const d = el && el.closest('[data-c]'); return d && tav.contains(d) ? d.dataset.c.split(',').map(Number) : null; };
+  function salva() { Y.S.scrivi('e_logi_stato', JSON.stringify(porzioni)); }
+  function chiudi() {
+    if (!inizio) return;
+    const a = inizio, b = attuale || inizio; inizio = attuale = null;
+    if (a[0] === b[0] && a[1] === b[1]) {
+      const i = porzioni.findIndex(r => dentro(r, a[0], a[1]));
+      if (i >= 0) { porzioni.splice(i, 1); Y.suono('clic'); }
+    } else {
+      const r = rett(a, b);
+      porzioni = porzioni.filter(q => !(q[0] < r[0] + r[2] && r[0] < q[0] + q[2] && q[1] < r[1] + r[3] && r[1] < q[1] + q[3]));
+      porzioni.push(r); Y.suono('clic');
+    }
+    salva();
+    if (disegna()) vinto();
+  }
+  function vinto() {
+    Y.sigilla('logi', document.getElementById('g-logi'), 'Il banchetto è diviso. Logi, intanto, ha mangiato anche il tavolo.');
+    if (!Y.fatto('logi_rivelato')) {
+      Y.segna('logi_rivelato');
+      Y.popup('Pari e patta', '<p>Ti volti per mostrare il tuo lavoro e vedi che Logi ha divorato la sua metà del banchetto: la carne, le ossa, e anche il legno del suo lato del tavolo, fino all\'ultima scheggia. Il re ride. «Pareggio», dice. «Che è come dire che hai vinto. Pochi pareggiano con Logi.»</p>');
+    }
+    document.getElementById('trappola').innerHTML = '';
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('fiume') })) {
+    try { porzioni = JSON.parse(Y.S.leggi('e_logi_stato') || '[]') || []; } catch (e) { porzioni = []; }
+    tav.addEventListener('pointerdown', (e) => { if (Y.risolto('logi')) return; const c = cellaDa(e); if (!c) return; e.preventDefault(); inizio = attuale = c; disegna(); });
+    window.addEventListener('pointermove', (e) => { if (!inizio) return; const c = cellaDa(e); if (c && (c[0] !== attuale[0] || c[1] !== attuale[1])) { attuale = c; disegna(); } });
+    window.addEventListener('pointerup', chiudi); window.addEventListener('pointercancel', () => { inizio = attuale = null; disegna(); });
+    if (disegna() || Y.risolto('logi')) { Y.sigilla('logi', document.getElementById('g-logi')); }
+    if (!Y.risolto('logi')) {
+      const b = document.createElement('button'); b.className = 'pericolo'; b.textContent = 'Hai fame: prendi un boccone dal trogolo di Logi';
+      b.onclick = () => Y.trappola('logi', 'Il piatto di Logi',
+        '<p>La carne nel trogolo ha un aspetto magnifico. Allunghi la mano, e la carne non c\'è: c\'è una fiamma, bianca e affamata, che ti sale lungo il braccio. Logi ti guarda con i suoi occhi rossi, offeso. «Era mia», dice. Il suo fiato è caldo come una fornace.</p>');
+      document.getElementById('trappola').appendChild(b);
+    }
+    document.getElementById('daCapoL').onclick = () => { if (Y.risolto('logi')) return; porzioni = []; salva(); disegna(); };
+    document.getElementById('torna').onclick = () => Y.vai('E_Corte.html');
+  }
+</script>
+</body>
+</html>

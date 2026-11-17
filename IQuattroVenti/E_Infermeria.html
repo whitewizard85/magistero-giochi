@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Casa di Gríðr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Austri · infermeria</p>
+    <h1>La Casa di Gríðr</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Ti svegli su un letto lungo il triplo di te, sotto una coperta che pesa come un tetto. La casa è di una gigantessa: Gríðr, che fra i giganti è l'unica a cui gli dèi siano sempre piaciuti. Ha le mani grandi come pale e una voce sorprendentemente gentile.</p>
+  </div>
+  <p id="cura"></p>
+  <p id="conta" class="nota"></p>
+  <div class="avviso" id="consiglio"></div>
+  <p class="nota">Non hai perso nulla: le prove superate e le rune incise sono ancora tue.</p>
+  <div class="scelte"><button id="torna">Alzati e torna dove eri</button></div>
+</main>
+<script>
+  const CURE = {
+    ifingr: ['Ti ha ripescato con un rastrello, dice, a valle della gola, «come un pesce troppo piccolo per tenerlo». Ti avvolge in una pelle d\'orso finché smetti di tremare.', 'L\'Ífingr non si attraversa a nuoto. Si attraversa con la testa.'],
+    elli:   ['«Hai lottato con Elli», sospira Gríðr, scuotendo la testa. «Nemmeno il dio del tuono ci è riuscito.» Ti dà da bere un brodo caldo, e senti tornare negli arti gli anni che la vecchia ti aveva preso in prestito.', 'Con la vecchiaia non si lotta. Si va avanti.'],
+    logi:   ['Ti spalma sulla mano un unguento di grasso d\'oca e fuliggine. «Logi non divide il suo piatto con nessuno», dice. «Nemmeno con chi ha fame.»', 'Nel piatto di Logi non c\'è cibo: c\'è soltanto il fuoco che lo mangia.'],
+    hugi:   ['«Ti ho trovato che correvi in tondo nel mio orto, a occhi aperti, borbottando», dice Gríðr. Ti mette una pezza fredda sulla fronte. «Hugi ti ha portato dentro la sua testa. O tu sei entrato nella tua.»', 'Non inseguire Hugi dove lui va. Ripeti i suoi passi, e basta.'],
+    mare:   ['Ti fa sputare acqua salata per un quarto d\'ora. «Hai bevuto dal mare», dice, e ride piano. «Non si finisce mai, di bere dal mare.»', 'Prima di bere, scopri dove va a finire il corno.'],
+    gatto:  ['Hai addosso segni rossi a spirale, come se ti avesse stretto una corda lunghissima. Gríðr li guarda a lungo senza dire niente, poi li copre con delle bende.', 'Quel gatto non si solleva per la pancia. Prima capisci dove finisce quello che ha dentro.']
+  };
+  if (Y.stanza({ tipo: 'via' })) {
+    const id = Y.S.leggi('e_trappola') || '';
+    const c = CURE[id] || ['Gríðr ti rimette in piedi senza farti domande.', 'Guarda bene prima di agire.'];
+    document.getElementById('cura').textContent = c[0];
+    document.getElementById('consiglio').textContent = '«' + c[1] + '»';
+    const n = parseInt(Y.S.leggi('e_cadute') || '0', 10) || 0;
+    document.getElementById('conta').textContent = n === 1
+      ? '«È la prima volta che ti porto in casa. Facciamo che sia l\'ultima.»'
+      : `«È la ${n}ª volta che ti raccolgo, ${Y.nome().split(' ')[0]}.»`;
+    if (Y.S.leggi('e_infermeria') !== '1') document.getElementById('torna').textContent = 'Torna sul sentiero';
+    document.getElementById('torna').onclick = () => {
+      const r = Y.S.leggi('e_ritorno') || Y.S.leggi('e_stanza') || 'E_Fiume.html';
+      Y.S.togli('e_infermeria');
+      Y.vai(r);
+    };
+    history.pushState(null, '', location.href);
+    window.addEventListener('popstate', () => history.pushState(null, '', location.href));
+  }
+</script>
+</body>
+</html>

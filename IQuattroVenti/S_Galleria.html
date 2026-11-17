@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Galleria Buia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .miniera{display:grid; grid-template-columns:repeat(7,1fr); gap:3px; max-width:400px; margin:16px auto 8px; user-select:none; touch-action:manipulation}
+  .miniera button{aspect-ratio:1; padding:0 !important; border-radius:4px; border:1px solid #4A342C !important; background:#140D0B; text-align:center;
+    font:700 clamp(17px,5vw,24px) "Spectral",serif; color:#FFFFFF}
+  .miniera button.luce{background:#A87F2A; border-color:#D9A84A !important}
+  .miniera button.torcia{background:#FFC24D; color:#221714; border-color:#FFFFFF !important}
+  .miniera button.torcia.urto{background:#FF7B9C; color:#221714}
+  .miniera button.roccia{background:#6E6A68; color:#FFFFFF; border-color:#9A9592 !important; cursor:default}
+  .miniera button.roccia.giusta{background:#5EE3C0; color:#221714}
+  .miniera button.roccia.troppo{background:#FF7B9C; color:#221714}
+  .legenda-t{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; font-size:14.5px; color:var(--ferro)}
+  .legenda-t i{display:inline-block; width:14px; height:14px; vertical-align:-2px; margin-right:5px; border-radius:3px}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Suðri · il terzo lavoro</p>
+    <h1>La Galleria Buia</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>«Per il martello serve ferro», dice Brokkr, «e il ferro buono sta in fondo alla galleria.» Ti porta all'imbocco di una miniera scavata nella roccia. Dentro è buio pesto, e l'aria ha un odore dolciastro che non ti piace.</p>
+    <p>Lungo la galleria si allarga una camera di quarantanove passi, piena di massi. Su alcuni massi i nani hanno inciso dei numeri. Brokkr ti mette in mano un fascio di torce spente e un acciarino. «Accendile solo dove servono. Qui sotto c'è un'aria che non ama le fiamme vicine.»</p>
+  </div>
+  <div class="avviso">All'ingresso, inciso nella roccia: «Niente fuoco di Muspel nella miniera. Mai.»</div>
+
+  <section class="gioco" id="g-torce">
+    <h2>Le torce della miniera</h2>
+    <p class="regole">Sistema le torce in modo che ogni casella libera della camera sia illuminata. Una torcia illumina la sua casella e tutte quelle in linea retta nelle quattro direzioni, finché non incontra un masso. Due torce non devono mai illuminarsi a vicenda. Un masso con un numero deve avere esattamente quel numero di torce nelle caselle accanto (sopra, sotto, a destra, a sinistra); i massi senza numero possono averne quante vuoi.</p>
+    <p class="regole"><strong>Come si gioca:</strong> tocca una casella per accendere o spegnere una torcia. Le caselle illuminate diventano dorate; le torce che si vedono fra loro diventano rosa; un numero diventa verde quando è soddisfatto.</p>
+    <div class="miniera" id="miniera"></div>
+    <div class="legenda-t"><span><i style="background:#FFC24D"></i>torcia</span><span><i style="background:#A87F2A"></i>illuminata</span><span><i style="background:#140D0B;border:1px solid #6A4639"></i>al buio</span><span><i style="background:#6E6A68"></i>masso</span></div>
+    <p class="nota" id="statoT" style="text-align:center">Caselle illuminate: 0 su 35</p>
+    <div class="scelte" style="margin:8px 0 0"><button id="daCapoT" class="piccolo">Spegni tutte le torce</button></div>
+  </section>
+
+  <div class="scelte" id="trappola"></div>
+  <div class="scelte indietro"><button id="torna">Torna nella bottega</button></div>
+</main>
+<script>
+  const N = 7;
+  const MASSI = {}; [[5,6,null],[1,0,2],[3,4,null],[3,2,null],[4,5,null],[2,1,1],[0,1,2],[6,5,1],[4,4,0],[2,2,null],[5,2,1],[1,4,1],[0,6,2],[6,0,1]].forEach(([x, y, n]) => MASSI[x + ',' + y] = n);
+  const LIBERE = N * N - Object.keys(MASSI).length;
+  let torce = new Set();
+  const box = document.getElementById('miniera'), celle = {};
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const b = document.createElement('button'), k = x + ',' + y; b.dataset.c = k;
+    b.setAttribute('aria-label', `riga ${y + 1}, colonna ${x + 1}${k in MASSI ? ', masso' : ''}`);
+    b.onclick = () => tocca(k); box.appendChild(b); celle[k] = b;
+  }
+  const raggio = (k) => {
+    const [x0, y0] = k.split(',').map(Number), out = [];
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) { let x = x0 + dx, y = y0 + dy; while (x >= 0 && y >= 0 && x < N && y < N && !((x + ',' + y) in MASSI)) { out.push(x + ',' + y); x += dx; y += dy; } }
+    return out;
+  };
+  function disegna() {
+    const luce = new Set(), urti = new Set();
+    torce.forEach(t => { luce.add(t); raggio(t).forEach(c => { luce.add(c); if (torce.has(c)) { urti.add(c); urti.add(t); } }); });
+    let numeriOk = true;
+    Object.entries(celle).forEach(([k, b]) => {
+      b.className = ''; b.textContent = '';
+      if (k in MASSI) {
+        b.classList.add('roccia'); const n = MASSI[k];
+        if (n !== null) {
+          b.textContent = n;
+          const [x, y] = k.split(',').map(Number);
+          const c = [[1,0],[-1,0],[0,1],[0,-1]].filter(([dx, dy]) => torce.has((x + dx) + ',' + (y + dy))).length;
+          if (c === n) b.classList.add('giusta'); else { numeriOk = false; if (c > n) b.classList.add('troppo'); }
+        }
+      } else if (torce.has(k)) { b.classList.add('torcia'); b.textContent = '🔥'; if (urti.has(k)) b.classList.add('urto'); }
+      else if (luce.has(k)) b.classList.add('luce');
+    });
+    const accese = [...luce].filter(k => !(k in MASSI)).length;
+    document.getElementById('statoT').textContent = `Caselle illuminate: ${accese} su ${LIBERE}` + (urti.size ? ' — alcune torce si vedono fra loro!' : '');
+    return accese === LIBERE && !urti.size && numeriOk;
+  }
+  function tocca(k) {
+    if (k in MASSI || Y.risolto('torce')) return;
+    if (torce.has(k)) torce.delete(k); else torce.add(k);
+    Y.suono('clic'); Y.S.scrivi('s_torce_stato', JSON.stringify([...torce]));
+    if (disegna()) vinto();
+  }
+  function vinto() {
+    Y.sigilla('torce', document.getElementById('g-torce'), 'La camera è illuminata, e in fondo luccica una vena di ferro nero.');
+    document.getElementById('trappola').innerHTML = '';
+    if (!Y.fatto('torce_rivelato')) {
+      Y.segna('torce_rivelato');
+      Y.popup('Il ferro nero', '<p>Alla luce delle torce, la parete in fondo alla camera mostra una vena di ferro così scura che sembra assorbire la luce. Brokkr la stacca a colpi di piccone, ne riempie un sacco e se lo carica in spalla come se fosse piuma. «Con questo», dice, «si fa un martello che torna sempre nella mano di chi lo lancia.»</p>');
+    }
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('piana') })) {
+    try { torce = new Set(JSON.parse(Y.S.leggi('s_torce_stato') || '[]')); } catch (e) { torce = new Set(); }
+    if (disegna() || Y.risolto('torce')) Y.sigilla('torce', document.getElementById('g-torce'));
+    if (!Y.risolto('torce')) {
+      const t = document.createElement('button'); t.className = 'pericolo'; t.textContent = 'Fai prima: accendi un ramo nel fuoco di Muspel che arde all\'ingresso';
+      t.onclick = () => Y.trappola('galleria', 'Il fuoco di Muspel',
+        '<p>Il ramo prende fuoco subito, con una fiamma bianca e avida. Fai tre passi nella galleria, e l\'aria dolciastra si accende tutta insieme, con un tonfo sordo che ti solleva da terra e ti risputa fuori, nero di fuliggine, con le sopracciglia che non ci sono più.</p>');
+      document.getElementById('trappola').appendChild(t);
+    }
+    document.getElementById('daCapoT').onclick = () => { if (Y.risolto('torce')) return; torce = new Set(); Y.S.scrivi('s_torce_stato', '[]'); disegna(); };
+    document.getElementById('torna').onclick = () => Y.vai('S_Bottega.html');
+  }
+</script>
+</body>
+</html>

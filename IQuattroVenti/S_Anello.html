@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>La Stanza dell'Anello</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .sudo{display:grid; grid-template-columns:repeat(6,1fr); max-width:380px; margin:16px auto 10px; border:3px solid #FFFFFF; border-radius:6px; overflow:hidden; user-select:none}
+  .sudo button{aspect-ratio:1; padding:0 !important; border-radius:0 !important; border:1px solid #6A4639 !important; background:#2A1D19; text-align:center;
+    font:400 clamp(22px,7vw,32px) "Noto Sans Runic",sans-serif; color:#FFFFFF}
+  .sudo button.dato{background:#5A3A2C; color:#FFC24D; cursor:default}
+  .sudo button.scelta{background:#7A5040; box-shadow:inset 0 0 0 3px #FFC24D}
+  .sudo button.conflitto{color:#FF7B9C; background:#4A1E28}
+  .sudo button.dx{border-right:3px solid #FFFFFF !important}
+  .sudo button.sotto{border-bottom:3px solid #FFFFFF !important}
+  .tasti-r{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:380px; margin:0 auto}
+  .tasti-r button{width:52px; height:52px; padding:0 !important; text-align:center; font:400 26px "Noto Sans Runic",sans-serif; border-left-width:1px; border-radius:10px}
+  .tasti-r button.cancella{width:auto; padding:0 14px !important; font:16px "Spectral",serif}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Suðri · il secondo lavoro</p>
+    <h1>La Stanza dell'Anello</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>Su un piccolo incudine d'argento, in una stanza tutta per sé, Eitri ha appena forgiato un anello d'oro. È ancora tiepido. «Draupnir», dice Brokkr a bassa voce, come se l'anello potesse sentirlo. «Ogni nona notte, da lui ne goccioleranno altri otto, dello stesso peso. Ma solo se gli incidiamo dentro le rune giuste, nell'ordine giusto.»</p>
+    <p>Sul banco c'è il disegno dell'incisione: una griglia di trentasei caselle, alcune già piene. Le altre aspettano te.</p>
+  </div>
+  <div class="avviso">Sul bordo dell'incudine: «L'oro appena nato morde. Non metterlo al dito finché non è finito.»</div>
+
+  <section class="gioco" id="g-draupnir">
+    <h2>Le notti di Draupnir</h2>
+    <p class="regole">Completa la griglia con le sei rune ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ. In ogni riga, in ogni colonna e in ognuno dei sei riquadri 2×3 (bordati di bianco) ogni runa deve comparire una volta sola. Le rune dorate sono già incise e non si cambiano.</p>
+    <p class="regole"><strong>Come si gioca:</strong> tocca una casella, poi tocca la runa da incidere. Le rune che si ripetono nella stessa riga, colonna o riquadro diventano rosa.</p>
+    <div class="sudo" id="sudo"></div>
+    <div class="tasti-r" id="tasti"></div>
+    <p class="nota" id="statoD" style="text-align:center;margin-top:10px">Caselle riempite: 0 su 36</p>
+  </section>
+
+  <div class="scelte" id="trappola"></div>
+  <div class="scelte indietro"><button id="torna">Torna nella bottega</button></div>
+</main>
+<script>
+  const RUNE = ['', 'ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ'];
+  const DATI = [[0,0,2,0,0,3],[1,0,0,2,0,0],[0,1,0,0,2,0],[6,0,0,3,0,0],[2,4,0,6,0,0],[0,6,0,5,0,2]];
+  let g, scelta = null;
+  const box = document.getElementById('sudo'), celle = [];
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) {
+    const b = document.createElement('button'); b.dataset.r = r; b.dataset.c = c;
+    if (c === 2) b.classList.add('dx'); if (r === 1 || r === 3) b.classList.add('sotto');
+    b.setAttribute('aria-label', `riga ${r + 1}, colonna ${c + 1}`);
+    b.onclick = () => { if (DATI[r][c] || Y.risolto('draupnir')) return; scelta = [r, c]; Y.suono('clic'); disegna(); };
+    box.appendChild(b); celle.push(b);
+  }
+  const tasti = document.getElementById('tasti');
+  for (let v = 1; v <= 6; v++) { const t = document.createElement('button'); t.textContent = RUNE[v]; t.setAttribute('aria-label', 'runa ' + RUNE[v]); t.onclick = () => metti(v); tasti.appendChild(t); }
+  const canc = document.createElement('button'); canc.className = 'cancella'; canc.textContent = 'Cancella'; canc.onclick = () => metti(0); tasti.appendChild(canc);
+  function conflitto(r, c) {
+    const v = g[r][c]; if (!v) return false;
+    for (let i = 0; i < 6; i++) { if (i !== c && g[r][i] === v) return true; if (i !== r && g[i][c] === v) return true; }
+    const r0 = Math.floor(r / 2) * 2, c0 = Math.floor(c / 3) * 3;
+    for (let i = r0; i < r0 + 2; i++) for (let j = c0; j < c0 + 3; j++) if ((i !== r || j !== c) && g[i][j] === v) return true;
+    return false;
+  }
+  function disegna() {
+    let pieni = 0, errori = 0;
+    celle.forEach(b => {
+      const r = +b.dataset.r, c = +b.dataset.c, v = g[r][c];
+      b.textContent = RUNE[v]; b.classList.toggle('dato', !!DATI[r][c]);
+      b.classList.toggle('scelta', !!scelta && scelta[0] === r && scelta[1] === c);
+      const k = conflitto(r, c); b.classList.toggle('conflitto', k && !DATI[r][c]); if (k) errori++;
+      if (v) pieni++;
+    });
+    document.getElementById('statoD').textContent = `Caselle riempite: ${pieni} su 36`;
+    return pieni === 36 && errori === 0;
+  }
+  function metti(v) {
+    if (!scelta || Y.risolto('draupnir')) return;
+    g[scelta[0]][scelta[1]] = v; Y.suono('clic'); Y.S.scrivi('s_draupnir_stato', JSON.stringify(g));
+    if (disegna()) vinto();
+  }
+  function vinto() {
+    scelta = null; disegna();
+    Y.sigilla('draupnir', document.getElementById('g-draupnir'), 'Le rune sono incise, e l\'anello comincia a battere piano, come un cuore.');
+    document.getElementById('trappola').innerHTML = '';
+    if (!Y.fatto('draupnir_rivelato')) {
+      Y.segna('draupnir_rivelato');
+      Y.popup('Draupnir', '<p>Brokkr avvolge l\'anello in un panno di lana come se fosse un neonato. «Questo è per Odino», dice. «Fra nove notti ne avrà nove. Fra diciotto, diciassette. Vediamo se i figli di Ivaldi sanno fare di meglio.»</p>');
+    }
+  }
+  if (Y.stanza({ richiede: () => Y.fatto('piana') })) {
+    try { g = JSON.parse(Y.S.leggi('s_draupnir_stato') || 'null'); } catch (e) { g = null; }
+    if (!g || g.length !== 6) g = DATI.map(r => r.slice());
+    DATI.forEach((r, i) => r.forEach((v, j) => { if (v) g[i][j] = v; }));
+    if (disegna() || Y.risolto('draupnir')) Y.sigilla('draupnir', document.getElementById('g-draupnir'));
+    if (!Y.risolto('draupnir')) {
+      const t = document.createElement('button'); t.className = 'pericolo'; t.textContent = 'Prova l\'anello al dito, così com\'è';
+      t.onclick = () => Y.trappola('anello', 'L\'oro che morde',
+        '<p>L\'anello scivola al dito come se fosse fatto apposta per te. Poi stringe. Poi brucia, di un calore che non viene da fuori ma da dentro, e senti l\'oro che cerca di moltiplicarsi lì, sulla tua mano: due anelli, tre, quattro, sempre più pesanti, finché non riesci più ad alzare il braccio.</p>');
+      document.getElementById('trappola').appendChild(t);
+    }
+    document.getElementById('torna').onclick = () => Y.vai('S_Bottega.html');
+  }
+</script>
+</body>
+</html>

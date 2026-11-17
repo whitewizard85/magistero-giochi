@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Il Fiume Ífingr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/motore.css?v=3">
+<script src="assets/motore.js?v=3"></script>
+</head>
+<body>
+<style>
+  .fiume{display:block; width:100%; max-width:420px; margin:16px auto 6px; aspect-ratio:1; touch-action:manipulation; user-select:none;
+    background:linear-gradient(160deg,#16416B,#0F2C4D); border:2px solid #5C77B8; border-radius:8px}
+  .fiume .onda{stroke:rgba(180,215,255,.18); stroke-width:.12; fill:none}
+  .fiume .ponte{stroke:#FFFFFF; stroke-width:.14; stroke-linecap:round}
+  .fiume .roccia{fill:#3A3F5C; stroke:#E8ECFA; stroke-width:.07; cursor:pointer}
+  .fiume .roccia.scelta{fill:#FFB547; stroke:#FFFFFF}
+  .fiume .roccia.giusta{fill:#4FE3B2; stroke:#FFFFFF}
+  .fiume .roccia.troppo{fill:#FF8A7A; stroke:#FFFFFF}
+  .fiume text{font:600 .5px "Spectral",serif; fill:#FFFFFF; text-anchor:middle; dominant-baseline:central; pointer-events:none}
+  .fiume .roccia.scelta + text, .fiume .roccia.giusta + text{fill:#11152B}
+  .fiume .bersaglio{fill:none; stroke:#FFB547; stroke-width:.06; stroke-dasharray:.12 .1}
+</style>
+<main>
+  <header class="iscrizione">
+    <p class="luogo">Via di Austri · prima stanza</p>
+    <h1>Il Fiume Ífingr</h1>
+    <div class="rune"></div>
+  </header>
+  <div class="saga">
+    <p>La galleria dell'Est si apre su una gola profonda. In fondo scorre un fiume largo e veloce, con l'acqua color ardesia che fuma nel freddo. Non c'è una lastra di ghiaccio, nemmeno sulle rive: l'Ífingr, dicono, non gela mai. Separa la terra degli dèi da quella dei giganti, e i giganti ci tengono che resti così.</p>
+    <p>Dal fiume spuntano tredici rocce piatte. Su ciascuna è inciso un numero, e sulla riva c'è una catasta di assi lunghe e robuste. Un cartello di legno, scritto con lettere enormi, spiega come usarle.</p>
+  </div>
+  <div class="avviso">«L'acqua dell'Ífingr corre più forte di qualsiasi nuotatore. Chi ci entra, esce dove vuole il fiume.»</div>
+
+  <section class="gioco" id="g-ponti">
+    <h2>I sassi dell'Ífingr</h2>
+    <p class="regole">Collega tutte le rocce con le assi. Ogni roccia deve reggere esattamente il numero di assi inciso sopra. Le assi vanno solo in orizzontale o in verticale, da una roccia a quella più vicina sulla stessa linea; fra due rocce se ne possono mettere al massimo due; le assi non possono incrociarsi. Alla fine, da ogni roccia si deve poter raggiungere ogni altra.</p>
+    <p class="regole"><strong>Come si gioca:</strong> tocca una roccia (diventa arancione), poi tocca un'altra roccia sulla stessa riga o colonna. Ogni tocco aggiunge un'asse: dopo la seconda, il terzo tocco le toglie. Una roccia diventa verde quando ha il numero giusto di assi, rossa se ne ha troppe.</p>
+    <svg class="fiume" id="fiume" viewBox="-0.6 -0.6 7.2 7.2" aria-label="Il fiume con le rocce"></svg>
+    <p class="nota" id="statoP" style="text-align:center">Rocce a posto: 0 su 13</p>
+    <div class="scelte" style="margin:8px 0 0"><button id="daCapoP" class="piccolo">Togli tutte le assi</button></div>
+  </section>
+
+  <div class="scelte" id="uscite"></div>
+  <div class="scelte indietro"><button id="torna">Torna alle radici del frassino</button></div>
+</main>
+<script>
+  const ISOLE = [[2,2,7],[2,4,3],[6,2,1],[6,4,2],[0,2,6],[0,4,2],[2,0,5],[0,0,3],[4,0,4],[6,6,3],[4,6,4],[6,0,2],[1,6,2]];
+  const chiave = (i) => ISOLE[i][0] + ',' + ISOLE[i][1];
+  const indice = {}; ISOLE.forEach((s, i) => indice[chiave(i)] = i);
+  // coppie di rocce che si vedono (stessa riga o colonna, nessuna roccia in mezzo)
+  const VICINI = [];
+  ISOLE.forEach((a, i) => [[1, 0], [0, 1]].forEach(([dx, dy]) => {
+    for (let k = 1; k < 7; k++) {
+      const x = a[0] + dx * k, y = a[1] + dy * k;
+      if (x > 6 || y > 6) break;
+      const j = indice[x + ',' + y];
+      if (j !== undefined) { if (k > 1) VICINI.push([i, j]); break; }
+    }
+  }));
+  const celle = ([i, j]) => {
+    const [ax, ay] = ISOLE[i], [bx, by] = ISOLE[j], out = [];
+    if (ax === bx) for (let y = Math.min(ay, by) + 1; y < Math.max(ay, by); y++) out.push(ax + ',' + y);
+    else for (let x = Math.min(ax, bx) + 1; x < Math.max(ax, bx); x++) out.push(x + ',' + ay);
+    return out;
+  };
+  const nomeArco = (i, j) => Math.min(i, j) + '-' + Math.max(i, j);
+  let ponti = {}, scelta = null;
+  const svg = document.getElementById('fiume');
+
+  function conta(i) { return VICINI.reduce((s, [a, b]) => s + ((a === i || b === i) ? (ponti[nomeArco(a, b)] || 0) : 0), 0); }
+  function collegato() {
+    const viste = new Set([0]), pila = [0];
+    while (pila.length) {
+      const x = pila.pop();
+      VICINI.forEach(([a, b]) => {
+        if (!ponti[nomeArco(a, b)]) return;
+        const y = a === x ? b : b === x ? a : -1;
+        if (y >= 0 && !viste.has(y)) { viste.add(y); pila.push(y); }
+      });
+    }
+    return viste.size === ISOLE.length;
+  }
+  function disegna() {
+    let h = '';
+    for (let k = 0; k < 7; k++) h += `<path class="onda" d="M-0.6 ${k + .5} q 1.8 -.25 3.6 0 t 3.6 0"/>`;
+    VICINI.forEach(([a, b]) => {
+      const n = ponti[nomeArco(a, b)] || 0; if (!n) return;
+      const [ax, ay] = ISOLE[a], [bx, by] = ISOLE[b];
+      const vert = ax === bx, off = n === 2 ? [-.1, .1] : [0];
+      off.forEach(o => h += `<line class="ponte" x1="${ax + (vert ? o : 0)}" y1="${ay + (vert ? 0 : o)}" x2="${bx + (vert ? o : 0)}" y2="${by + (vert ? 0 : o)}"/>`);
+    });
+    let giuste = 0;
+    ISOLE.forEach(([x, y, n], i) => {
+      const c = conta(i); if (c === n) giuste++;
+      const cl = i === scelta ? 'scelta' : c === n ? 'giusta' : c > n ? 'troppo' : '';
+      if (scelta !== null && i !== scelta && VICINI.some(([a, b]) => (a === scelta && b === i) || (b === scelta && a === i)))
+        h += `<circle class="bersaglio" cx="${x}" cy="${y}" r=".46"/>`;
+      h += `<circle class="roccia ${cl}" data-i="${i}" cx="${x}" cy="${y}" r=".36"/><text x="${x}" y="${y}">${n}</text>`;
+    });
+    svg.innerHTML = h;
+    document.getElementById('statoP').textContent = `Rocce a posto: ${giuste} su ${ISOLE.length}` + (giuste === ISOLE.length && !collegato() ? ' — ma non tutte le rocce sono collegate fra loro.' : '');
+    return giuste === ISOLE.length && collegato();
+  }
+  function tocca(i) {
+    if (Y.risolto('ponti')) return;
+    if (scelta === null || scelta === i) { scelta = scelta === i ? null : i; Y.suono('clic'); disegna(); return; }
+    const arco = VICINI.find(([a, b]) => (a === scelta && b === i) || (b === scelta && a === i));
+    if (!arco) { scelta = i; Y.suono('clic'); disegna(); return; }
+    const k = nomeArco(...arco), n = ((ponti[k] || 0) + 1) % 3;
+    if (n === 1) {
+      const mie = new Set(celle(arco));
+      const incrocia = VICINI.some(v => ponti[nomeArco(...v)] && nomeArco(...v) !== k && celle(v).some(c => mie.has(c)));
+      if (incrocia) { Y.suono('no'); Y.popup('', '<p>Quell\'asse taglierebbe un\'altra asse già posata. Le assi non possono incrociarsi.</p>'); return; }
+    }
+    if (n) ponti[k] = n; else delete ponti[k];
+    scelta = null; Y.suono('clic'); Y.S.scrivi('e_ponti_stato', JSON.stringify(ponti));
+    if (disegna()) vinto();
+  }
+  function vinto() {
+    Y.sigilla('ponti', document.getElementById('g-ponti'), 'Le assi reggono, e il fiume brontola senza poter fare niente.');
+    uscite();
+  }
+  function uscite() {
+    const u = document.getElementById('uscite'); u.innerHTML = '';
+    if (Y.risolto('ponti')) {
+      const b = document.createElement('button'); b.textContent = 'Attraversa le assi verso la fortezza dei giganti';
+      b.onclick = () => { Y.segna('fiume'); Y.vai('E_Corte.html'); }; u.appendChild(b);
+    } else {
+      const b = document.createElement('button'); b.className = 'pericolo'; b.textContent = 'Lascia perdere le assi: attraversa a nuoto';
+      b.onclick = () => Y.trappola('ifingr', 'L\'acqua che non gela',
+        '<p>Il primo passo nell\'acqua non è nemmeno così freddo. Il secondo, il fondo non c\'è più. La corrente ti prende per le caviglie e ti porta via come una foglia, oltre le rocce, oltre la gola, mentre in alto, sul ciglio, qualcuno enorme ride con una voce che sembra una frana.</p>');
+      u.appendChild(b);
+    }
+  }
+  if (Y.stanza({ richiede: () => true })) {
+    try { ponti = JSON.parse(Y.S.leggi('e_ponti_stato') || '{}') || {}; } catch (e) { ponti = {}; }
+    svg.addEventListener('click', (e) => { const c = e.target.closest('.roccia'); if (c) tocca(+c.dataset.i); });
+    if (disegna() || Y.risolto('ponti')) { Y.sigilla('ponti', document.getElementById('g-ponti')); }
+    uscite();
+    document.getElementById('daCapoP').onclick = () => { if (Y.risolto('ponti')) return; ponti = {}; scelta = null; Y.S.scrivi('e_ponti_stato', '{}'); disegna(); };
+    document.getElementById('torna').onclick = () => Y.vai('Radici.html');
+  }
+</script>
+</body>
+</html>
