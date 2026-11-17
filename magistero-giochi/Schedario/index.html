@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lo Schedario di Quirke — Il Mercoledì del Magistero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Alegreya:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --notte:#0d1420; --notte2:#16202f; --pietra:#223047; --bordo:#3a4c68;
+  --perg:#f3e7c9; --perg2:#e6d4a8; --inchiostro:#2a1d10; --oro:#e8c46a; --testo:#e9eef6; --tenue:#a9b6c9;
+  --c0:#2f9e5e; --c1:#2f7fd6; --c2:#e5b52a; --c3:#8a52d6; --c4:#d6453b;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:Alegreya,Georgia,serif; color:var(--testo); font-size:17px; line-height:1.45;
+  background:radial-gradient(ellipse at 50% -10%,#2a4a5e 0%,transparent 55%),
+             radial-gradient(ellipse at 20% 0%,rgba(80,200,150,.18) 0%,transparent 40%),
+             linear-gradient(#0b111b,#0d1420 40%,#101a28);
+  min-height:100vh;
+}
+.wrap{max-width:640px;margin:0 auto;padding:22px 14px 60px}
+h1{font-family:"Uncial Antiqua",serif;font-weight:400;color:var(--oro);text-align:center;font-size:30px;margin:6px 0 2px;letter-spacing:.5px}
+.sotto{text-align:center;color:var(--tenue);font-style:italic;margin:0 0 18px}
+.lettera{background:var(--perg);color:var(--inchiostro);border-radius:6px;padding:16px 18px;
+  box-shadow:0 6px 24px rgba(0,0,0,.45), inset 0 0 40px rgba(150,110,50,.25);margin-bottom:18px}
+.lettera p{margin:0 0 10px}
+.lettera p:last-child{margin:0}
+.firma{text-align:right;font-style:italic}
+.regole{background:var(--notte2);border:1px solid var(--bordo);border-radius:6px;padding:12px 16px;margin-bottom:18px;color:var(--tenue);font-size:15.5px}
+.regole b{color:var(--testo)}
+.regole ul{margin:6px 0 0;padding-left:20px}
+.card{background:var(--notte2);border:1px solid var(--bordo);border-radius:8px;padding:16px}
+label{display:block;margin-bottom:6px}
+input[type=text]{width:100%;font:inherit;padding:11px 12px;border-radius:6px;border:1px solid var(--bordo);background:#0b111b;color:var(--testo)}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--bordo);background:var(--pietra);color:var(--testo);padding:10px 14px;min-height:44px}
+button.primario{background:var(--oro);color:#1b1408;border-color:var(--oro);font-weight:700}
+button:disabled{opacity:.45;cursor:default}
+.avviso{color:#ffb4a8;font-size:15px;margin-top:8px;min-height:1.2em}
+.nascosto{display:none!important}
+.stato{display:flex;justify-content:space-between;align-items:center;margin:4px 2px 10px;color:var(--tenue);font-size:15px;gap:10px;flex-wrap:wrap}
+.lumi{display:flex;gap:7px;align-items:center}
+.lume{width:14px;height:14px;border-radius:50%;background:var(--oro);box-shadow:0 0 8px var(--oro)}
+.lume.spento{background:#3b4352;box-shadow:none}
+.cassetto{border-radius:7px;padding:10px 12px;margin-bottom:8px;color:#fff;text-align:center;animation:apri .45s ease}
+.cassetto .tit{font-weight:700;font-size:17px;text-transform:uppercase;letter-spacing:.6px}
+.cassetto .par{font-size:15px}
+.cassetto .desc{font-size:14px;font-style:italic;margin-top:4px;opacity:.95}
+.k0{background:var(--c0)}.k1{background:var(--c1)}.k2{background:var(--c2);color:#1d1606}.k3{background:var(--c3)}.k4{background:var(--c4)}
+@keyframes apri{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+.griglia{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.scheda{background:var(--perg);color:var(--inchiostro);border:2px solid var(--perg2);border-radius:6px;
+  min-height:58px;padding:6px 3px;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;text-align:center;
+  overflow-wrap:normal;word-break:normal;hyphens:manual;user-select:none;transition:transform .1s, background .15s}
+.scheda.sel{background:#4b3a22;color:var(--perg);border-color:var(--oro);transform:translateY(-2px)}
+.scheda.scuoti{animation:scuoti .4s}
+@keyframes scuoti{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.comandi{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.comandi button{flex:1}
+.msg{text-align:center;min-height:1.5em;margin-top:10px;font-style:italic;color:var(--oro)}
+.pergamena{background:var(--perg);color:var(--inchiostro);border-radius:6px;padding:20px;text-align:center;margin-top:16px;
+  box-shadow:0 6px 24px rgba(0,0,0,.5), inset 0 0 50px rgba(150,110,50,.3)}
+.pergamena h2{font-family:"Uncial Antiqua",serif;font-weight:400;margin:0 0 8px}
+.codice{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:28px;letter-spacing:3px;font-weight:700;margin:10px 0;color:#5a1d10}
+.piccolo{font-size:14px;color:#5b4a30}
+@media (max-width:420px){.scheda{font-size:13.5px;min-height:54px}.scheda.lunga{font-size:11.5px;letter-spacing:-.2px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Lo Schedario di Quirke</h1>
+  <p class="sotto">Il Mercoledì del Magistero</p>
+
+  <div class="lettera">
+    <p>Cari studenti,</p>
+    <p>stanotte qualcuno ha lasciato aperta la finestra del mio studio, e il vento del Nord ha fatto il resto. Le venti schede del mio archivio di mitologia norrena sono finite sul pavimento, mescolate come foglie d'autunno. Ma il peggio è che sono volate via anche le etichette dei cinque cassetti.</p>
+    <p>So soltanto che ogni cassetto conteneva <b>quattro schede</b> con qualcosa in comune. Attenzione, però: alcune schede sembrano fatte per due cassetti diversi, e ne entra soltanto uno. Rimettetele a posto voi, prima che lo schedario si spazientisca.</p>
+    <p class="firma">Prof. Tiberius N. Quirke</p>
+  </div>
+
+  <div class="regole">
+    <b>Come si gioca</b>
+    <ul>
+      <li>Tocca quattro schede che secondo te stanno insieme, poi premi <b>Riponi nel cassetto</b>.</li>
+      <li>Se il gruppo è giusto, il cassetto si apre e svela la sua etichetta.</li>
+      <li>Hai a disposizione <b>4 errori</b>, uno per ogni lume. Quando si spegne l'ultimo, lo schedario si chiude.</li>
+      <li>Alla fine comparirà una pergamena con il tuo nome e un codice personale: mandane lo screen in privato a Voce del Magistero.</li>
+    </ul>
+  </div>
+
+  <section id="ingresso" class="card">
+    <label for="nome">Scrivi il tuo nome, come compare sul Magistero. <b>Una volta confermato non si potrà più cambiare.</b></label>
+    <input id="nome" type="text" autocomplete="off" maxlength="60" placeholder="Nome e cognome">
+    <div class="comandi"><button class="primario" id="entra">Entra nello studio</button></div>
+    <div class="avviso" id="avvisoNome"></div>
+  </section>
+
+  <section id="gioco" class="nascosto">
+    <div class="stato">
+      <span id="chi"></span>
+      <span class="lumi" aria-label="Errori rimasti" id="lumi"></span>
+    </div>
+    <div id="aperti"></div>
+    <div class="griglia" id="griglia"></div>
+    <div class="comandi" id="comandi">
+      <button id="mescola">Mescola</button>
+      <button id="deseleziona">Deseleziona</button>
+      <button class="primario" id="riponi" disabled>Riponi nel cassetto</button>
+    </div>
+    <div class="msg" id="msg" role="status"></div>
+    <div id="fine" class="nascosto"></div>
+  </section>
+</div>
+
+<script>
+const D = {"words": ["Gleipnir", "Thor", "Huginn", "Geri", "Muspelheim", "Gungnir", "Mjölnir", "Muninn", "Midgard", "Asgard", "Freki", "Hel", "Sleipnir", "Fenrir", "Jörmungandr", "Niflheim", "Frigg", "Tyr", "Draupnir", "Odino"], "data": [{"h": "57d5c2b49920a938", "c": 3, "x": "94kuFwIbEZOXIMZ/P9u1r8IvuiwDMZBFS8Xzudn9UdR3urM90GUgL19V7Y43uBSKq25i2Yy1dfVmSh+ulQj2wlSFoeYHf6SXqtPf6Y4Lmw/+B2e3yaGt1jgIBidZvg/4Vkr7sF1Qvo4UYSW7iR39XQ0GWGRHd0zKAQUnNP8UkuNjpMTWstL9Nfcd1XtRqVIf+Bb/oLPG8+omTrLNaHWQg9pQVlRXYC91n4kR4/azbs5CHZAFDL+QP7diwPfvZaEL4ggOLTFGdu+Gy5aDcQ=="}, {"h": "d660d02ae76c5976", "c": 2, "x": "MS7XjMF+IovhlgQEp2maWcXEgA8GLNiqZVIQJjfL+c8xJECmYZQCmzapBiTD59e4XLA8PNY8n5Kx/33Eu14LIsJQEi+735/Mkz0fgbyKmV5rUuW1y+PciCbrSPvaxEnzuSS5KiNhxZBvtDPi3ygSSji+sBoOz1SDtRghgEJNGss6p7axfJsOd+6exep7a9fg0BRCGtZ7JAr0aG+Erb4aK1aGjhgo0hVz9BcCbtcudYMmYTyrjBXC"}, {"h": "9cc1c613b98d632f", "c": 1, "x": "sWkfkhcVioZGqhQmQ/hMe6Z/Qfz9PMWjQiaT7nRZkM3U+uzgb9f0S0ekw4RBkMm/VG1tt8VwNaSMdXaevZgXZI70yZ7Nugsepcos/RqKjAGbXMvsutJD0MKUj6GsAYdC4Hljnivh9SaAM+L9A2If+K4bxHN+rdTsmQ9YJjx2fEfCbxM7Y8Cxb+oR1xKmaWkRgm2lKn55c/VR9viKr2xsNqa/oV+bZaeGDqwZ1Tc6UzXRMpR2W63Y3/RCf9c="}, {"h": "139685d3808c7957", "c": 4, "x": "vAukmxySxMPAr70ThkFoIzEkabuwAJX508IW/Tq65+jcOOWXK+yIIr44OHxVr40IsapWFMCKTg51FfcrZz0mfjqLS0VkNU4WD9e+7+MjrV8VUca35oCbI+ICza/bXO9pFI7k8Qz2fVL6hW/GCklwempaBj2SZTX2y8Oj1PqE+3R3bIJjLNnwEPNHLNCrvcdPTa0sOJI+Hq9w8l9dyXombGOKUmeiQHk3OH+xd1SUiXe3dhBfgdNirK7Pwri4LDt9erk="}, {"h": "248f6fa8711ffcc4", "c": 0, "x": "u/zCden2DqFcaCLVboFtUE40cTaR0Y+ETIERKirpxlHu6l4nf15XmTHK0ljSrZCxcEebqA6zClLRck7WdfiMLvftavxXt8rIoIp8jBpakRBfGPtcmDedwagIU3LhSsG5VaqZnniuVmTCdx/9EC97g5S3s5yzoRNPYq7X+e1eDxt7xyKThhh9fihDBEQgXR7vF6LoUxFCDTGvPmQMpQ5BXsbSvR73olAOMncJutU5TnUnpi6nFJJyDTPc9tzr20LCFduJ2jKqg/ASKHO2uw=="}]};
+const SALT = "schedario-quirke-2026", CHIAVE = "mq_schedario_v1", MAXERR = 4;
+function fnv(s, seed){let h=(0x811c9dc5^(seed>>>0))>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}return h>>>0;}
+function hx(s){return fnv(s+SALT,7).toString(16).padStart(8,"0")+fnv(s+SALT,99).toString(16).padStart(8,"0");}
+function stream(key,n){let x=fnv(key+"#k",3)||1,o=[];for(let i=0;i<n;i++){x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;x>>>=0;o.push(x&255);}return o;}
+function dec(key,b64){const b=Uint8Array.from(atob(b64),c=>c.charCodeAt(0)),k=stream(key,b.length);return JSON.parse(new TextDecoder().decode(b.map((v,i)=>v^k[i])));}
+function chiave(ws){return [...ws].sort().join("|");}
+function trova(ws){const h=hx(chiave(ws));return D.data.findIndex(g=>g.h===h);}
+function norm(n){return n.trim().replace(/\s+/g," ").toLowerCase();}
+function codice(nome,trovati,errori){
+  const s="cod|"+norm(nome)+"|"+trovati+"|"+errori;
+  const A="ACDEFGHJKLMNPQRSTUVWXYZ2345679";
+  let a=fnv(s,11),b=fnv(s,23),out="";
+  for(let i=0;i<4;i++){out+=A[a%A.length];a=Math.floor(a/A.length);}
+  out+="-";
+  for(let i=0;i<4;i++){out+=A[b%A.length];b=Math.floor(b/A.length);}
+  return out;
+}
+function rnd(seed){let x=seed||1;return()=>{x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;x>>>=0;return x/4294967296;};}
+function mescola(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+let S=null, sel=[];
+function salva(){try{localStorage.setItem(CHIAVE,JSON.stringify(S));}catch(e){}}
+function carica(){try{return JSON.parse(localStorage.getItem(CHIAVE)||"null");}catch(e){return null;}}
+const $=id=>document.getElementById(id);
+
+function avvia(){
+  $("ingresso").classList.add("nascosto");
+  $("gioco").classList.remove("nascosto");
+  $("chi").textContent="Studente: "+S.nome;
+  disegna();
+}
+function disegna(){
+  const lumi=$("lumi");lumi.innerHTML="";
+  for(let i=0;i<MAXERR;i++){const l=document.createElement("span");l.className="lume"+(i<S.errori?" spento":"");lumi.appendChild(l);}
+  const ap=$("aperti");ap.innerHTML="";
+  S.aperti.forEach(a=>{
+    const g=D.data[a.i],info=dec(chiave(a.w),g.x);
+    const d=document.createElement("div");d.className="cassetto k"+g.c;
+    d.innerHTML='<div class="tit"></div><div class="par"></div><div class="desc"></div>';
+    d.querySelector(".tit").textContent=info.t;
+    d.querySelector(".par").textContent=a.w.join(" · ");
+    d.querySelector(".desc").textContent=info.d;
+    ap.appendChild(d);
+  });
+  const usate=new Set(S.aperti.flatMap(a=>a.w));
+  const gr=$("griglia");gr.innerHTML="";
+  S.ordine.filter(w=>!usate.has(w)).forEach(w=>{
+    const b=document.createElement("button");b.className="scheda"+(w.length>9?" lunga":"")+(sel.includes(w)?" sel":"");b.textContent=w;
+    b.setAttribute("aria-pressed",sel.includes(w)?"true":"false");
+    b.onclick=()=>{if(S.finito)return;
+      if(sel.includes(w))sel=sel.filter(x=>x!==w);else if(sel.length<4)sel.push(w);
+      $("msg").textContent="";disegna();};
+    gr.appendChild(b);
+  });
+  $("riponi").disabled=sel.length!==4||S.finito;
+  if(S.finito)fine();
+}
+function riponi(){
+  if(sel.length!==4)return;
+  const k=chiave(sel);
+  if(S.provati.includes(k)){$("msg").textContent="Questo gruppo l'hai già provato, e lo schedario se lo ricorda.";return;}
+  const i=trova(sel);
+  if(i>=0){
+    S.aperti.push({i,w:[...sel]});sel=[];
+    $("msg").textContent=S.aperti.length===D.data.length?"":"Clic! Il cassetto si apre.";
+    if(S.aperti.length===D.data.length)S.finito=true;
+  }else{
+    S.provati.push(k);S.errori++;
+    // tre su quattro giuste?
+    const resto=S.ordine.filter(w=>!sel.includes(w));
+    let quasi=false;
+    for(let a=0;a<4&&!quasi;a++){const tre=sel.filter((_,j)=>j!==a);
+      for(const w of resto){if(trova([...tre,w])>=0){quasi=true;break;}}}
+    $("msg").textContent=quasi?"Quasi! Tre schede su quattro vanno insieme.":"Il cassetto resta chiuso. Una folata spegne un lume.";
+    document.querySelectorAll(".scheda.sel").forEach(e=>{e.classList.remove("scuoti");void e.offsetWidth;e.classList.add("scuoti");});
+    if(S.errori>=MAXERR)S.finito=true;
+  }
+  salva();
+  setTimeout(disegna,S.finito?0:380);
+}
+function fine(){
+  $("comandi").classList.add("nascosto");
+  const f=$("fine");f.classList.remove("nascosto");
+  const t=S.aperti.length,tot=D.data.length,vinto=t===tot;
+  const cod=codice(S.nome,t,S.errori);
+  f.innerHTML='<div class="pergamena"><h2></h2><p class="testo"></p><p><b class="nome"></b></p>'+
+    '<p>Cassetti riordinati: <b>'+t+' su '+tot+'</b> · Errori: <b>'+S.errori+'</b></p>'+
+    '<div class="codice"></div><p class="piccolo">Manda lo screen di questa pergamena in privato a Voce del Magistero, poi scrivi «fatto» sotto il post.</p></div>';
+  f.querySelector("h2").textContent=vinto?"Lo schedario è in ordine!":"Lo schedario si è chiuso";
+  f.querySelector(".testo").textContent=vinto
+    ?"Ogni scheda è tornata al suo posto e ogni cassetto ha ritrovato la sua etichetta. Il professor Quirke ringrazia:"
+    :"L'ultimo lume si è spento e i cassetti rimasti non si apriranno più stanotte. Il lavoro fatto conta comunque:";
+  f.querySelector(".nome").textContent=S.nome;
+  f.querySelector(".codice").textContent=cod;
+}
+$("entra").onclick=()=>{
+  const n=$("nome").value.trim().replace(/\s+/g," ");
+  if(n.length<3){$("avvisoNome").textContent="Scrivi il tuo nome per intero.";return;}
+  if(!confirm("Confermi il nome «"+n+"»? Non potrai più cambiarlo."))return;
+  const r=rnd(fnv(norm(n),5));
+  S={nome:n,ordine:mescola([...D.words],r),aperti:[],errori:0,provati:[],finito:false};
+  salva();avvia();
+};
+$("nome").addEventListener("keydown",e=>{if(e.key==="Enter")$("entra").click();});
+$("mescola").onclick=()=>{mescola(S.ordine,Math.random);salva();disegna();};
+$("deseleziona").onclick=()=>{sel=[];$("msg").textContent="";disegna();};
+$("riponi").onclick=riponi;
+S=carica();
+if(S&&S.nome&&Array.isArray(S.ordine))avvia();
+</script>
+</body>
+</html>
